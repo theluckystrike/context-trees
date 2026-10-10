@@ -1,0 +1,76 @@
+[
+	{
+		"feature": "search-trees",
+		"caption": "Search for a word: every match shows the heading path and the parent list items above it, merged into one tree for each note.",
+		"note": "Project Atlas.md",
+		"eval": "(async()=>{ app.plugins.plugins['context-trees'].pro.signOut(); await new Promise(r=>setTimeout(r,300)); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); const leaf=app.workspace.getLeaf('split','vertical'); await leaf.setViewState({type:'context-trees',active:true,state:{mode:'search',query:\"pricing\",regex:false}}); await app.plugins.plugins['context-trees'].firstView().runNow(); await new Promise(r=>setTimeout(r,500));  return 'ok'; })()",
+		"after": "(async()=>{ app.plugins.plugins['context-trees'].pro.signOut(); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); return 'ok'; })()",
+		"wait": 900
+	},
+	{
+		"feature": "backlinks",
+		"caption": "Backlinks of the open note, each link line with its heading path and parent items.",
+		"note": "Project Atlas.md",
+		"eval": "(async()=>{ app.plugins.plugins['context-trees'].pro.signOut(); await new Promise(r=>setTimeout(r,300)); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); const leaf=app.workspace.getLeaf('split','vertical'); await leaf.setViewState({type:'context-trees',active:true,state:{mode:'backlinks',query:\"\",regex:false}}); await app.plugins.plugins['context-trees'].firstView().runNow(); await new Promise(r=>setTimeout(r,500));  return 'ok'; })()",
+		"after": "(async()=>{ app.plugins.plugins['context-trees'].pro.signOut(); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); return 'ok'; })()",
+		"wait": 900
+	},
+	{
+		"feature": "fold",
+		"caption": "Fold a note or any branch with its arrow. Click a line to open the note at that line.",
+		"note": "Project Atlas.md",
+		"eval": "(async()=>{ app.plugins.plugins['context-trees'].pro.signOut(); await new Promise(r=>setTimeout(r,300)); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); const leaf=app.workspace.getLeaf('split','vertical'); await leaf.setViewState({type:'context-trees',active:true,state:{mode:'search',query:\"pricing\",regex:false}}); await app.plugins.plugins['context-trees'].firstView().runNow(); await new Promise(r=>setTimeout(r,500)); [...document.querySelectorAll('.ct-file')].slice(2).forEach(f=>f.classList.add('is-collapsed')); document.querySelectorAll('.ct-file')[0].querySelector('.ct-node .ct-node.ct-item')?.classList.add('is-collapsed'); await new Promise(r=>setTimeout(r,300)); return 'ok'; })()",
+		"after": "(async()=>{ app.plugins.plugins['context-trees'].pro.signOut(); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); return 'ok'; })()",
+		"wait": 900
+	},
+	{
+		"feature": "regex-saved",
+		"caption": "Pro: a regular expression, with the query saved as a chip for the next time.",
+		"note": "Project Atlas.md",
+		"eval": "(async()=>{ const pro=app.plugins.plugins['context-trees'].pro; pro.opts.http=async()=>({status:200,json:{data:{viewer:{login:'demo-reader'},user:{sponsorshipForViewerAsSponsor:{isActive:true,isOneTimePayment:false,tier:{name:'$5 a month',monthlyPriceInCents:500}}}}}}); app.secretStorage.setSecret('context-trees-github-token','gho_'+'0'.repeat(36)); await pro.refreshNow(); await new Promise(r=>setTimeout(r,500)); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); const leaf=app.workspace.getLeaf('split','vertical'); await leaf.setViewState({type:'context-trees',active:true,state:{mode:'search',query:\"pric(e|es|ing)\\\\b\",regex:true}}); await app.plugins.plugins['context-trees'].firstView().runNow(); await new Promise(r=>setTimeout(r,500)); document.querySelector('.ct-switch[aria-label=\"Save this query\"]').click(); await new Promise(r=>setTimeout(r,400)); return 'ok'; })()",
+		"after": "(async()=>{ const p=app.plugins.plugins['context-trees']; p.settings.saved=[]; await p.saveSettings(); p.pro.signOut(); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); return 'ok'; })()",
+		"wait": 900
+	},
+	{
+		"feature": "unlinked-mentions",
+		"caption": "Pro: notes that say Atlas without linking to it, with the context of each mention.",
+		"note": "Project Atlas.md",
+		"eval": "(async()=>{ const pro=app.plugins.plugins['context-trees'].pro; pro.opts.http=async()=>({status:200,json:{data:{viewer:{login:'demo-reader'},user:{sponsorshipForViewerAsSponsor:{isActive:true,isOneTimePayment:false,tier:{name:'$5 a month',monthlyPriceInCents:500}}}}}}); app.secretStorage.setSecret('context-trees-github-token','gho_'+'0'.repeat(36)); await pro.refreshNow(); await new Promise(r=>setTimeout(r,500)); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); const leaf=app.workspace.getLeaf('split','vertical'); await leaf.setViewState({type:'context-trees',active:true,state:{mode:'unlinked',query:\"\",regex:false}}); await app.plugins.plugins['context-trees'].firstView().runNow(); await new Promise(r=>setTimeout(r,500));  return 'ok'; })()",
+		"after": "(async()=>{ app.plugins.plugins['context-trees'].pro.signOut(); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); return 'ok'; })()",
+		"wait": 900
+	},
+	{
+		"feature": "export",
+		"caption": "Pro: the results as a new Markdown note, with the context trees as nested lists.",
+		"note": "Project Atlas.md",
+		"eval": "(async()=>{ const pro=app.plugins.plugins['context-trees'].pro; pro.opts.http=async()=>({status:200,json:{data:{viewer:{login:'demo-reader'},user:{sponsorshipForViewerAsSponsor:{isActive:true,isOneTimePayment:false,tier:{name:'$5 a month',monthlyPriceInCents:500}}}}}}); app.secretStorage.setSecret('context-trees-github-token','gho_'+'0'.repeat(36)); await pro.refreshNow(); await new Promise(r=>setTimeout(r,500)); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); const leaf=app.workspace.getLeaf('split','vertical'); await leaf.setViewState({type:'context-trees',active:true,state:{mode:'search',query:\"pricing\",regex:false}}); await app.plugins.plugins['context-trees'].firstView().runNow(); await new Promise(r=>setTimeout(r,500)); await app.plugins.plugins['context-trees'].firstView().exportResults(); await new Promise(r=>setTimeout(r,900)); document.querySelectorAll('.notice-container .notice').forEach(n=>n.remove()); return 'ok'; })()",
+		"after": "(async()=>{ const p=app.plugins.plugins['context-trees']; p.pro.signOut(); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); for (const f of app.vault.getMarkdownFiles().filter(x=>x.basename.startsWith('Context trees pricing'))) { app.workspace.getLeavesOfType('markdown').filter(l=>l.view.file?.path===f.path).forEach(l=>l.detach()); await app.vault.delete(f); } return 'ok'; })()",
+		"wait": 900
+	},
+	{
+		"feature": "demo",
+		"caption": "Search, refine, fold, then switch to backlinks.",
+		"frames": [
+			{
+				"note": "Project Atlas.md",
+				"eval": "(async()=>{ app.plugins.plugins['context-trees'].pro.signOut(); await new Promise(r=>setTimeout(r,300)); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); const leaf=app.workspace.getLeaf('split','vertical'); await leaf.setViewState({type:'context-trees',active:true,state:{mode:'search',query:\"pricing\",regex:false}}); await app.plugins.plugins['context-trees'].firstView().runNow(); await new Promise(r=>setTimeout(r,500));  return 'ok'; })()",
+				"hold": 1600
+			},
+			{
+				"note": "Project Atlas.md",
+				"eval": "(async()=>{ app.plugins.plugins['context-trees'].pro.signOut(); await new Promise(r=>setTimeout(r,300)); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); const leaf=app.workspace.getLeaf('split','vertical'); await leaf.setViewState({type:'context-trees',active:true,state:{mode:'search',query:\"pricing yearly\",regex:false}}); await app.plugins.plugins['context-trees'].firstView().runNow(); await new Promise(r=>setTimeout(r,500));  return 'ok'; })()",
+				"hold": 1600
+			},
+			{
+				"note": "Project Atlas.md",
+				"eval": "(async()=>{ app.plugins.plugins['context-trees'].pro.signOut(); await new Promise(r=>setTimeout(r,300)); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); const leaf=app.workspace.getLeaf('split','vertical'); await leaf.setViewState({type:'context-trees',active:true,state:{mode:'search',query:\"pricing\",regex:false}}); await app.plugins.plugins['context-trees'].firstView().runNow(); await new Promise(r=>setTimeout(r,500)); [...document.querySelectorAll('.ct-file')].slice(1).forEach(f=>f.classList.add('is-collapsed')); await new Promise(r=>setTimeout(r,300)); return 'ok'; })()",
+				"hold": 1600
+			},
+			{
+				"note": "Project Atlas.md",
+				"eval": "(async()=>{ app.plugins.plugins['context-trees'].pro.signOut(); await new Promise(r=>setTimeout(r,300)); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); const leaf=app.workspace.getLeaf('split','vertical'); await leaf.setViewState({type:'context-trees',active:true,state:{mode:'backlinks',query:\"\",regex:false}}); await app.plugins.plugins['context-trees'].firstView().runNow(); await new Promise(r=>setTimeout(r,500));  return 'ok'; })()",
+				"hold": 1800
+			}
+		]
+	}
+]
