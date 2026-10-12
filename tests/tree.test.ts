@@ -136,3 +136,30 @@ describe('reference reader', () => {
 		expect(r.error).not.toBe('');
 	});
 });
+
+describe('audit fixes', () => {
+	it('keeps the root items of a list at line 0 apart from the children of line 0', () => {
+		expect(trees('- a\n  - b needle\n- c needle', 'needle').outline).toEqual(['- a', '  * b <<needle>>', '* c <<needle>>']);
+		// The metadata cache gives 0 or -0 to each root item of a list that starts at line 0, and 0 to each child of line 0.
+		const doc = lines('- a\n  - b x\n- c x');
+		const s = { headings: [], items: [{ line: 0, endLine: 0, parent: 0 }, { line: 1, endLine: 1, parent: 0 }, { line: 2, endLine: 2, parent: 0 }] };
+		const tree = buildTree(doc, s, findHits(doc, (parseQuery('x') as { ok: true; query: never }).query));
+		expect(tree.map((n) => n.text)).toEqual(['a', 'c x']);
+		expect(tree[0]?.children.map((n) => n.text)).toEqual(['b x']);
+		const quoted = lines('> - a\n>   - b x\n> - c x');
+		expect(buildTree(quoted, s, findHits(quoted, (parseQuery('x') as { ok: true; query: never }).query)).length).toBe(2);
+	});
+
+	it('reads notes with Windows line ends', () => {
+		expect(trees('# Head\r\n\r\nneedle here\r\n', 'needle').outline).toEqual(['- # Head', '  * <<needle>> here']);
+		expect(trees('# Head\r\nneedle here\r\n', 'here$', { regex: true }).hits).toBe(1);
+	});
+
+	it('marks the right columns when lower case changes the length of a character', () => {
+		const q = parseQuery('pricing');
+		expect(q.ok && matchLine('İstanbul pricing', q.query)).toEqual([[9, 16]]);
+		const both = parseQuery('İstanbul');
+		expect(both.ok && matchLine('İstanbul pricing', both.query)).toEqual([[0, 8]]);
+		expect(findMentions(['İstanbul pricing'], ['Pricing'], new Map())).toEqual([{ line: 0, ranges: [[9, 16]] }]);
+	});
+});

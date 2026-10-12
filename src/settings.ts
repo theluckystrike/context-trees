@@ -77,7 +77,7 @@ export class ContextTreesSettingTab extends PluginSettingTab {
 			},
 			{
 				name: 'Notes per page',
-				desc: `How many notes the view lists before "Show more", from ${PAGE_MIN} to ${PAGE_MAX}. The search counts every match in the vault either way.`,
+				desc: `How many notes the view lists before "Show more", from ${PAGE_MIN} to ${PAGE_MAX}. The match count also includes the notes that are not listed yet.`,
 				control: { type: 'slider', key: 'pageSize', defaultValue: DEFAULT_SETTINGS.pageSize, min: PAGE_MIN, max: PAGE_MAX, step: 10 },
 			},
 			{

@@ -1,5 +1,11 @@
 # context-trees
 
+## 1.1.1
+
+### Patch Changes
+
+- a307c08: Fix the context tree of a list at the first line, notes with Windows line ends and marks after characters such as İ, and correct README claims.
+
 ## 1.1.0
 
 ### Minor Changes

@@ -34,6 +34,18 @@ export function parseQuery(text: string, opts: { regex?: boolean; caseSensitive?
 	return { ok: true, query: { terms: splitTerms(trimmed), regex: null, caseSensitive } };
 }
 
+/** Lower case with the same length, so columns in the result are columns in the text. A character that changes length (such as İ) stays as it is. */
+export function lowerSameLength(text: string): string {
+	const lower = text.toLowerCase();
+	if (lower.length === text.length) return lower;
+	let out = '';
+	for (const c of text) {
+		const l = c.toLowerCase();
+		out += l.length === c.length ? l : c;
+	}
+	return out;
+}
+
 /** Ranges of every match of one term in a line. An empty term gives none. */
 function termRanges(hay: string, term: string): [number, number][] {
 	const out: [number, number][] = [];
@@ -66,10 +78,10 @@ export function matchLine(line: string, q: Query): [number, number][] | null {
 		return out.length > 0 ? mergeRanges(out) : null;
 	}
 	if (q.terms.length === 0) return null;
-	const hay = q.caseSensitive ? line : line.toLowerCase();
+	const hay = q.caseSensitive ? line : lowerSameLength(line);
 	const all: [number, number][] = [];
 	for (const t of q.terms) {
-		const r = termRanges(hay, q.caseSensitive ? t : t.toLowerCase());
+		const r = termRanges(hay, q.caseSensitive ? t : lowerSameLength(t));
 		if (r.length === 0) return null;
 		all.push(...r);
 	}
@@ -97,11 +109,11 @@ function isWordChar(s: string, i: number): boolean {
  * `links` maps a line to the ranges that already are links ([[...]], embeds, Markdown links).
  */
 export function findMentions(lines: string[], names: string[], links: Map<number, [number, number][]>, from = 0): Hit[] {
-	const wanted = names.map((n) => n.trim().toLowerCase()).filter((n) => n.length > 1);
+	const wanted = names.map((n) => lowerSameLength(n.trim())).filter((n) => n.length > 1);
 	const out: Hit[] = [];
 	if (wanted.length === 0) return out;
 	for (let i = Math.max(0, from); i < lines.length; i++) {
-		const hay = (lines[i] as string).toLowerCase();
+		const hay = lowerSameLength(lines[i] as string);
 		const found: [number, number][] = [];
 		for (const name of wanted) {
 			for (let at = hay.indexOf(name); at >= 0 && found.length < 50; at = hay.indexOf(name, at + name.length)) {

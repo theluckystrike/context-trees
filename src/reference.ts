@@ -14,6 +14,11 @@ function indentOf(s: string): number {
 	return n;
 }
 
+/** Lines of a note. A Windows line end (CR LF) counts as one line end, so line numbers match the metadata cache. */
+export function splitLines(text: string): string[] {
+	return text.split(/\r?\n/);
+}
+
 /** First line after a leading properties block (--- ... ---), or 0. */
 export function frontmatterEnd(lines: string[]): number {
 	if (lines[0]?.trim() !== '---') return 0;
@@ -102,7 +107,7 @@ export interface TreesOptions {
 export function trees(markdown: string, queryText: string, opts: TreesOptions = {}): { outline: string[]; hits: number; error: string } {
 	const parsed = parseQuery(queryText, opts);
 	if (!parsed.ok) return { outline: [], hits: 0, error: parsed.error };
-	const lines = markdown.split('\n');
+	const lines = splitLines(markdown);
 	const hits = findHits(lines, parsed.query, frontmatterEnd(lines));
 	const tree = buildTree(lines, structureFromMarkdown(lines), hits);
 	return { outline: outline(tree), hits: hits.length, error: '' };

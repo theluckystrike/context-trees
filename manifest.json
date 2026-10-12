@@ -1,7 +1,7 @@
 {
 	"id": "context-trees",
 	"name": "Context Trees",
-	"version": "1.1.0",
+	"version": "1.1.1",
 	"minAppVersion": "1.13.4",
 	"description": "A side view that shows search results and backlinks with their heading path and parent list items.",
 	"author": "Michael Lip",

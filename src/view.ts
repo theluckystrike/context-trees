@@ -3,6 +3,7 @@ import { isPro, onProChange } from './pro';
 import { drawLinkText } from './links';
 import { backlinkSources, bodyStart, linkHits, linkRangesByLine, namesOf, structureFor } from './notes';
 import { findHits, findMentions, parseQuery } from './search';
+import { splitLines } from './reference';
 import { buildTree, countHits, treeToMarkdown, type Hit, type TreeNode } from './tree';
 import type { SavedQuery } from './settings';
 import type ContextTreesPlugin from './main';
@@ -313,7 +314,7 @@ export class ContextTreesView extends ItemView {
 			for (let k = 0; k < batch.length; k++) {
 				const file = batch[k];
 				if (!(file instanceof TFile)) continue;
-				const lines = (texts[k] as string).split('\n');
+				const lines = splitLines(texts[k] as string);
 				stats.scanned++;
 				const hits = perFile(file, lines);
 				if (hits.length === 0) continue;

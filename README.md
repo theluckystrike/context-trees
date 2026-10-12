@@ -1,6 +1,6 @@
 # Context Trees
 
-Context Trees is a side view for Obsidian that shows where each search result and each backlink sits in its note. Above every hit you see the heading path and the parent list items above the matching line. Hits that share a parent show that parent once, so a note with five matches reads as one small outline.
+Context Trees is a side view for Obsidian that shows where each search result and each backlink sits in its note. Above each hit you see the heading path and the parent list items above the matching line. Hits that share a parent show that parent once, so a note with five matches reads as one small outline.
 
 Context Trees is a separate view. It does not patch, wrap or hide the core Search pane or the core Backlinks pane, and it does not change them. Those panes stay as they are. Context Trees opens next to them and reads your notes with the public Obsidian API only. It does not depend on the private code of those panes.
 
@@ -10,7 +10,7 @@ Context Trees is a separate view. It does not patch, wrap or hide the core Searc
 
 ### Search with context trees
 
-Type a word or a quoted phrase. Every word must be on the same line. Each result note shows a tree: the headings above the match, then the parent list items, then the matching line with the hit marked. Two matches in the same list share the parents above them. The status line says how many matches were found in how many notes, and how long the search took.
+Type a word or a quoted phrase. Each word of the query must be on the same line. Each result note shows a tree: the headings above the match, then the parent list items, then the matching line with the hit marked. Two matches in the same list share the parents above them. The status line gives the number of matching lines, the number of notes and the time of the search. A line with two hits counts as one match.
 
 <img src="https://raw.githubusercontent.com/theluckystrike/context-trees/HEAD/docs/search-trees.png" alt="Search results for pricing, each note shown as a tree of headings and parent list items with the word marked" width="720">
 
@@ -22,7 +22,7 @@ Open the Backlinks tab to see the notes that link to the open note. Each linking
 
 ### Fold, unfold and open at the line
 
-Select the arrow of a note or of any branch to fold it. The two buttons above the results fold or unfold everything. Select a line to open its note with the cursor on that line. Hold Ctrl (Cmd on macOS) to open it in a new tab. Select a note name to open the note at the top.
+Select the arrow of a note or of any branch to fold it. The two buttons above the results fold or unfold each note and branch in the results. Select a line to open its note with the cursor on that line. Hold Ctrl (Cmd on macOS) to open it in a new tab. Select a note name to open the note at the top.
 
 <img src="https://raw.githubusercontent.com/theluckystrike/context-trees/HEAD/docs/fold.png" alt="Search results where four notes are folded to their names and match counts" width="720">
 
@@ -57,7 +57,7 @@ The download button, or the command "Export the results as a note", writes the c
 1. Open "Settings → Community plugins" and turn off restricted mode.
 2. Select "Browse", search for "Context Trees", then select "Install" and "Enable".
 
-To install by hand, copy `main.js`, `manifest.json` and `styles.css` from the latest release into `<vault>/.obsidian/plugins/context-trees/`. Then enable the plugin. You need Obsidian 1.13.4 or later. The plugin works on desktop and on mobile.
+To install by hand, copy `main.js`, `manifest.json` and `styles.css` from the latest release into `<vault>/.obsidian/plugins/context-trees/`. Then enable the plugin. You need Obsidian 1.13.4 or later. The plugin is not marked desktop only and uses no desktop-only API. The tests run on desktop only.
 
 ## Usage
 
@@ -73,7 +73,7 @@ Context Trees reads the headings and the list items from the Obsidian metadata c
 | Setting | What it does |
 | --- | --- |
 | Fold notes at start | Each note starts folded to its name and match count. Default off. |
-| Notes per page | How many notes are listed before "Show more", from 10 to 500. Default 50. Every match is counted. |
+| Notes per page | How many notes are listed before "Show more", from 10 to 500. Default 50. The count also includes the notes that are not listed yet. |
 | Search delay | Milliseconds to wait after you stop typing, from 100 to 1500. Default 250. |
 
 The settings tab also has the Pro section: sign in with GitHub, the status and Refresh.
@@ -90,7 +90,7 @@ No. The core Search and Backlinks panes work as before. Their syntax, such as `p
 
 ### How fast is it?
 
-In the end-to-end test on a vault of 2,001 notes (11 MB) on an M3 Pro Mac, the first results draw in 1 to 10 ms and a full search takes about 200 ms. The backlinks of a note with 1,795 linking notes and 7,231 links took 190 ms. A note with a few backlinks takes 1 ms.
+The end-to-end test makes a vault of 2,000 small notes. In that test, the first results must show in less than 1 second, and a full search must end in less than 4 seconds. The view reads 48 notes at a time and shows results while it reads. The time on your device depends on the device and on the size of your notes.
 
 ### Can I open a link from a result?
 

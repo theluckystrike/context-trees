@@ -81,13 +81,25 @@ export function itemAt(items: ItemRef[], line: number): ItemRef | null {
 	return found !== null && line <= found.endLine ? found : null;
 }
 
-/** Parent items of an item, outermost first. Stops at a root item. Bounded by the item count. */
-export function itemChain(items: ItemRef[], item: ItemRef): ItemRef[] {
+/** Width of the indent and quote marks before a list marker. A tab counts as 4. */
+function indentWidth(line: string): number {
+	let n = 0;
+	for (const c of /^[ \t>]*/.exec(line)?.[0] ?? '') n += c === '\t' ? 4 : 1;
+	return n;
+}
+
+/**
+ * Parent items of an item, outermost first. Stops at a root item. Bounded by the item count.
+ * A list that starts at line 0 gives its root items the parent 0 (or -0), the same number as a child of line 0.
+ * When `lines` is given, the indent tells them apart.
+ */
+export function itemChain(items: ItemRef[], item: ItemRef, lines?: string[]): ItemRef[] {
 	const out: ItemRef[] = [];
 	let cur: ItemRef = item;
 	for (let guard = 0; guard < items.length && cur.parent >= 0; guard++) {
 		const p = itemAt(items, cur.parent);
 		if (p === null || p.line !== cur.parent || p.line >= cur.line) break;
+		if (p.line === 0 && lines !== undefined && indentWidth(lines[cur.line] ?? '') <= indentWidth(lines[0] ?? '')) break;
 		out.unshift(p);
 		cur = p;
 	}
@@ -112,7 +124,7 @@ export function contextChain(lines: string[], s: NoteStructure, hit: Hit): TreeN
 		chain.push(node('line', hit.line, (lines[hit.line] ?? '').trim(), true, shift(hit.ranges, lines[hit.line] ?? '', 'line')));
 		return chain;
 	}
-	for (const p of itemChain(s.items, item)) chain.push(node('item', p.line, itemText(lines[p.line] ?? ''), false, []));
+	for (const p of itemChain(s.items, item, lines)) chain.push(node('item', p.line, itemText(lines[p.line] ?? ''), false, []));
 	if (item.line === hit.line) {
 		chain.push(node('item', item.line, itemText(lines[item.line] ?? ''), true, shift(hit.ranges, lines[item.line] ?? '', 'item')));
 	} else {
