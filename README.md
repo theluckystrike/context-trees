@@ -1,8 +1,8 @@
 # Context Trees
 
-Context Trees is a side view for Obsidian that shows where each search result and each backlink sits in its note. Under every hit you see the heading path and the parent list items above the matching line. Hits that share a parent show that parent once, so a note with five matches reads as one small outline.
+Context Trees is a side view for Obsidian that shows where each search result and each backlink sits in its note. Above every hit you see the heading path and the parent list items above the matching line. Hits that share a parent show that parent once, so a note with five matches reads as one small outline.
 
-Context Trees is a separate view. It does not patch, wrap or hide the core Search pane or the core Backlinks pane, and it does not change them. Those panes stay as they are. Context Trees opens next to them and reads your notes with the public Obsidian API only. For that reason an Obsidian update cannot break it by moving private code.
+Context Trees is a separate view. It does not patch, wrap or hide the core Search pane or the core Backlinks pane, and it does not change them. Those panes stay as they are. Context Trees opens next to them and reads your notes with the public Obsidian API only. It does not depend on the private code of those panes.
 
 <img src="https://raw.githubusercontent.com/theluckystrike/context-trees/HEAD/docs/demo.gif" alt="Search for pricing, refine the query, fold two notes, then switch to the backlinks of the open note" width="720">
 
@@ -25,6 +25,14 @@ Open the Backlinks tab to see the notes that link to the open note. Each linking
 Select the arrow of a note or of any branch to fold it. The two buttons above the results fold or unfold everything. Select a line to open its note with the cursor on that line. Hold Ctrl (Cmd on macOS) to open it in a new tab. Select a note name to open the note at the top.
 
 <img src="https://raw.githubusercontent.com/theluckystrike/context-trees/HEAD/docs/fold.png" alt="Search results where four notes are folded to their names and match counts" width="720">
+
+### Readable internal links
+
+Wiki links in headings, parent items and matching lines show their name or alias. For example, `[[Project Atlas|the project]]` shows "the project" as a link. Select that link to open its target. Heading and block links keep their target. Hold Ctrl (Cmd on macOS) to open the target in a new tab. You can also use Tab to select a link, then press Enter or Space.
+
+Select the text beside a link to open the source note at that line. Search marks stay visible in link labels. If the query matches a hidden path, the visible label is marked. A missing target shows a notice and does not create a note. Code spans, embeds, Markdown links and other Markdown stay as text. This feature is free.
+
+<img src="https://raw.githubusercontent.com/theluckystrike/context-trees/HEAD/docs/readable-links.png" alt="Search results with readable link aliases in headings, parent items and matching lines" width="720">
 
 ### Regular expressions and saved queries (Pro)
 
@@ -83,6 +91,10 @@ No. The core Search and Backlinks panes work as before. Their syntax, such as `p
 ### How fast is it?
 
 In the end-to-end test on a vault of 2,001 notes (11 MB) on an M3 Pro Mac, the first results draw in 1 to 10 ms and a full search takes about 200 ms. The backlinks of a note with 1,795 linking notes and 7,231 links took 190 ms. A note with a few backlinks takes 1 ms.
+
+### Can I open a link from a result?
+
+Yes. Select a wiki link label to open the target note. Select the rest of the row to open the source line. The view reads the target relative to the source note, so two notes with the same name follow the normal Obsidian link rules. Export keeps the original link text.
 
 ### Does it change my notes?
 

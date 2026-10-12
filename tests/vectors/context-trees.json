@@ -2,7 +2,7 @@
  "slug": "context-trees",
  "module": "context-trees/src/reference",
  "function": "trees",
- "note": "args = [Markdown text, query text, options {regex, caseSensitive}]; expected = {outline, hits}. outline has one line for each tree node, indented by depth: '*' marks a hit, '-' a context line, headings start with their # signs and hits are wrapped in <<>>. Expected values are written by hand. A hit counts one for each matching line. Only the fields present are compared.",
+ "note": "args = [Markdown text, query text, options {regex, caseSensitive}]; expected = {outline, hits}. outline has one line for each tree node, indented by depth: '*' marks a hit, '-' a context line, headings start with their # signs and hits are wrapped in <<>>. Expected values are written by hand. A hit counts one for each matching line. Only the fields present are compared. Wiki links show their names or aliases; a hit in a hidden target marks the visible label.",
  "cases": [
   {
    "name": "paragraph hit shows the heading path",
@@ -367,6 +367,105 @@
     "outline": [
      "- # Title",
      "  * <<needle>>"
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "wiki links show their alias in a matching heading",
+   "args": [
+    "# [[Folder/Note#Part|Project plan]]\nneedle",
+    "needle"
+   ],
+   "expected": {
+    "outline": [
+     "- # Project plan",
+     "  * <<needle>>"
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "a hit on a visible alias keeps its mark",
+   "args": [
+    "# Context\nSee [[Note|project plan]] today",
+    "plan"
+   ],
+   "expected": {
+    "outline": [
+     "- # Context",
+     "  * See project <<plan>> today"
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "a hit on a hidden link path marks the alias",
+   "args": [
+    "# Context\nSee [[Folder/Note|the plan]] today",
+    "Folder"
+   ],
+   "expected": {
+    "outline": [
+     "- # Context",
+     "  * See <<the plan>> today"
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "marks after a link use the source columns",
+   "args": [
+    "# Context\nSee [[Note|plan]] and needle",
+    "needle"
+   ],
+   "expected": {
+    "outline": [
+     "- # Context",
+     "  * See plan and <<needle>>"
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "parent list links are readable",
+   "args": [
+    "# Context\n- [[Note|parent]]\n  - needle",
+    "needle"
+   ],
+   "expected": {
+    "outline": [
+     "- # Context",
+     "  - parent",
+     "    * <<needle>>"
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "inline code and embeds stay as text",
+   "args": [
+    "# Context\n`[[Note]]` ![[Image]] needle",
+    "needle"
+   ],
+   "expected": {
+    "outline": [
+     "- # Context",
+     "  * `[[Note]]` ![[Image]] <<needle>>"
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "heading and block links keep their visible labels",
+   "args": [
+    "# Context\n[[Note#Heading]] and [[Note#^block|block]] needle",
+    "needle"
+   ],
+   "expected": {
+    "outline": [
+     "- # Context",
+     "  * Note#Heading and block <<needle>>"
     ],
     "hits": 1
    }

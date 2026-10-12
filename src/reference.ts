@@ -1,6 +1,7 @@
 // A small Markdown reader for headings and list items. The plugin uses the Obsidian metadata cache; this reader
 // stands in when a note has no cache yet (new note, first start), and it drives the golden vectors in tests.
 import { findHits, parseQuery } from './search';
+import { linkParts } from './links';
 import { buildTree, type HeadingRef, type ItemRef, type NoteStructure, type TreeNode } from './tree';
 
 const ATX = /^ {0,3}(#{1,6})[ \t]+(.*?)(?:[ \t]+#+)?[ \t]*$/;
@@ -77,12 +78,14 @@ export function outline(nodes: TreeNode[], depth = 0): string[] {
 	const out: string[] = [];
 	for (const n of nodes) {
 		let text = '';
-		let at = 0;
-		for (const [a, b] of n.ranges) {
-			text += `${n.text.slice(at, a)}<<${n.text.slice(a, b)}>>`;
-			at = b;
+		for (const part of linkParts(n.text, n.ranges)) {
+			let at = 0;
+			for (const [a, b] of part.ranges) {
+				text += `${part.text.slice(at, a)}<<${part.text.slice(a, b)}>>`;
+				at = b;
+			}
+			text += part.text.slice(at);
 		}
-		text += n.text.slice(at);
 		const mark = n.kind === 'heading' ? `${'#'.repeat(n.level ?? 1)} ` : '';
 		out.push(`${'  '.repeat(depth)}${n.hit ? '*' : '-'} ${mark}${text}`);
 		out.push(...outline(n.children, depth + 1));

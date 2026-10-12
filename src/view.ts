@@ -1,5 +1,6 @@
-import { ItemView, Keymap, Notice, TFile, setIcon, type ViewStateResult, type WorkspaceLeaf } from 'obsidian';
+import { ItemView, Keymap, Notice, TFile, getLinkpath, setIcon, type ViewStateResult, type WorkspaceLeaf } from 'obsidian';
 import { isPro, onProChange } from './pro';
+import { drawLinkText } from './links';
 import { backlinkSources, bodyStart, linkHits, linkRangesByLine, namesOf, structureFor } from './notes';
 import { findHits, findMentions, parseQuery } from './search';
 import { buildTree, countHits, treeToMarkdown, type Hit, type TreeNode } from './tree';
@@ -388,13 +389,7 @@ export class ContextTreesView extends ItemView {
 		if (n.children.length > 0) setIcon(tg, 'chevron-down');
 		else tg.addClass('is-leaf');
 		const text = row.createSpan({ cls: 'ct-text' });
-		let at = 0;
-		for (const [a, b] of n.ranges) {
-			if (a > at) text.appendText(n.text.slice(at, a));
-			text.createEl('mark', { cls: 'ct-mark', text: n.text.slice(a, b) });
-			at = b;
-		}
-		if (at < n.text.length) text.appendText(n.text.slice(at));
+		drawLinkText(text, n.text, n.ranges);
 		if (n.text === '') text.setText('Empty line');
 		if (n.children.length > 0) {
 			const kids = el.createDiv({ cls: 'ct-children' });
@@ -425,6 +420,16 @@ export class ContextTreesView extends ItemView {
 		}
 		const path = file.dataset.path;
 		if (!path) return;
+		const link = t.closest<HTMLElement>('.ct-link');
+		if (link?.dataset.link) {
+			e.preventDefault();
+			e.stopPropagation();
+			const linkpath = getLinkpath(link.dataset.link);
+			const dest = linkpath === '' ? this.app.vault.getFileByPath(path) : this.app.metadataCache.getFirstLinkpathDest(linkpath, path);
+			if (!dest) return void new Notice('That link target does not exist.');
+			void this.app.workspace.openLinkText(link.dataset.link, path, Keymap.isModEvent(e));
+			return;
+		}
 		const onNode = t.closest('.ct-row') !== null && node !== null;
 		void this.openAt(path, onNode ? Number(node.dataset.line) : null, e);
 	}

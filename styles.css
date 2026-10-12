@@ -220,3 +220,23 @@
 		height: var(--size-4-8);
 	}
 }
+
+.ct-link {
+	display: inline;
+	padding: 0;
+	height: auto;
+	font: inherit;
+	color: var(--link-color);
+	background: transparent;
+	box-shadow: none;
+	border: none;
+	border-radius: 0;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+.ct-link:hover,
+.ct-link:focus-visible {
+	color: var(--link-color-hover);
+	background: var(--background-modifier-hover);
+}

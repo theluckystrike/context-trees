@@ -24,6 +24,14 @@
 		"wait": 900
 	},
 	{
+		"feature": "readable-links",
+		"caption": "Wiki links show readable labels and open their target notes.",
+		"note": "Link examples.md",
+		"eval": "(async()=>{ app.plugins.plugins['context-trees'].pro.signOut(); await new Promise(r=>setTimeout(r,300)); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); const leaf=app.workspace.getLeaf('split','vertical'); await leaf.setViewState({type:'context-trees',active:true,state:{mode:'search',query:\"plan\",regex:false}}); await app.plugins.plugins['context-trees'].firstView().runNow(); await new Promise(r=>setTimeout(r,500));  return 'ok'; })()",
+		"after": "(async()=>{ app.plugins.plugins['context-trees'].pro.signOut(); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); return 'ok'; })()",
+		"wait": 900
+	},
+	{
 		"feature": "regex-saved",
 		"caption": "Pro: a regular expression, with the query saved as a chip for the next time.",
 		"note": "Project Atlas.md",

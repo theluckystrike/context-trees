@@ -90,6 +90,8 @@ async function treeOf(name: string): Promise<string[]> {
 
 describe(`${pluginId} in the real app`, function () {
 	before(async function () {
+		// The 2,000-note fixture can take more than the default 30 seconds on a busy Mac.
+		await browser.setTimeout({ script: 120_000 });
 		await setPro(false);
 		await obsidianPage.openFile(ATLAS);
 	});
@@ -108,7 +110,7 @@ describe(`${pluginId} in the real app`, function () {
 			'    - Launch scope',
 			'      * The pricing table lives on one page',
 			'  - Actions',
-			'    * Ana: draft the pricing copy for [[Project Atlas]]',
+			'    * Ana: draft the pricing copy for Project Atlas',
 		]);
 	});
 
@@ -138,8 +140,17 @@ describe(`${pluginId} in the real app`, function () {
 			'  - Open questions',
 			'    - Plans',
 			'      - What happens to old customers',
-			'        * Send one email, not three, see [[Project Atlas]]',
+			'        * Send one email, not three, see Project Atlas',
 		]);
+	});
+
+	it('opens a readable link target from a result without Pro', async function () {
+		await setPro(false);
+		await run('search', 'Ana: draft');
+		const link = await browser.$('.ct-node.is-hit .ct-link');
+		expect(await link.getText()).toBe('Project Atlas');
+		await link.click();
+		await browser.waitUntil(async () => (await browser.executeObsidian(({ app }) => app.workspace.getActiveFile()?.path ?? '')) === ATLAS, { timeout: 8000, timeoutMsg: 'the link target did not open' });
 	});
 
 	it('opens the note at the line of a clicked hit', async function () {
