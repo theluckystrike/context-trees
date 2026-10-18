@@ -1,5 +1,11 @@
 # context-trees
 
+## 1.2.0
+
+### Minor Changes
+
+- f55ba51: Show labels for local inline Markdown links in context trees. Keep search highlights and link navigation. Correct Unicode word boundaries in unlinked mentions.
+
 ## 1.1.2
 
 ### Patch Changes

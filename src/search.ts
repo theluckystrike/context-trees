@@ -98,10 +98,17 @@ export function findHits(lines: string[], q: Query, from = 0): Hit[] {
 	return out;
 }
 
-/** True when the character at `i` of `s` is a letter, digit or underscore. Out of range is false. */
+/** True when the code point at UTF-16 column `i` is part of a word. Out of range is false. */
 function isWordChar(s: string, i: number): boolean {
-	const c = s.charAt(i);
-	return c !== '' && /[\p{L}\p{N}_]/u.test(c);
+	if (i < 0 || i >= s.length) return false;
+	// A boundary before the match can land on the low surrogate of the preceding character.
+	const unit = s.charCodeAt(i);
+	if (unit >= 0xdc00 && unit <= 0xdfff && i > 0) {
+		const previous = s.charCodeAt(i - 1);
+		if (previous >= 0xd800 && previous <= 0xdbff) i--;
+	}
+	const point = s.codePointAt(i);
+	return point !== undefined && /[\p{L}\p{M}\p{N}_]/u.test(String.fromCodePoint(point));
 }
 
 /**

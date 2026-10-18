@@ -30,10 +30,21 @@ describe('readable internal links', () => {
 		expect(linkParts('| [[Note\\|alias]] | x |').filter((p) => p.target !== undefined)).toEqual([{ text: 'alias', target: 'Note', ranges: [] }]);
 	});
 
-	it('keeps URLs and Markdown links as text', () => {
-		const text = '[[https://example.com|web]] [[javascript:alert(1)|bad]] [[//example.com]] [Note](Note.md)';
+	it('keeps URLs as text', () => {
+		const text = '[[https://example.com|web]] [[javascript:alert(1)|bad]] [[//example.com]] [web](https://example.com) [bad](javascript:alert(1))';
 		expect(targets(text)).toEqual([]);
 		expect(linkParts(text).map((p) => p.text).join('')).toBe(text);
+	});
+
+	it('reads inline Markdown link labels and local targets', () => {
+		expect(linkParts('[計画](<資料/Mon%20été%20(1).md#Section>)')).toEqual([{ text: '計画', target: '資料/Mon été (1).md#Section', ranges: [] }]);
+		expect(targets('[plan](Note(1).md) [here](#Heading)')).toEqual(['Note(1).md', '#Heading']);
+		for (const text of ['![image](Note.md)', '`[code](Note.md)`', '\\[escaped](Note.md)', '[bad](bad%zz.md)', '[web](< https://example.com>)']) expect(targets(text)).toEqual([]);
+	});
+
+	it('moves highlights into Markdown labels and marks hidden destinations', () => {
+		expect(linkParts('[plan](Target.md)', [[1, 3]])[0]?.ranges).toEqual([[0, 2]]);
+		expect(linkParts('[plan](Target.md)', [[7, 13]])[0]?.ranges).toEqual([[0, 4]]);
 	});
 
 	it('moves match ranges into aliases and keeps marks after a link', () => {

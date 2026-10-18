@@ -5,6 +5,20 @@
  "note": "args = [Markdown text, query text, options {regex, caseSensitive}]; expected = {outline, hits}. outline has one line for each tree node, indented by depth: '*' marks a hit, '-' a context line, headings start with their # signs and hits are wrapped in <<>>. Expected values are written by hand. A hit counts one for each matching line. Only the fields present are compared. Wiki links show their names or aliases; a hit in a hidden target marks the visible label.",
  "cases": [
   {
+   "name": "Markdown link label marks a hidden target match",
+   "args": [
+    "# Links\nPlan [港](資料/Plan.md)\n",
+    "Plan"
+   ],
+   "expected": {
+    "outline": [
+     "- # Links",
+     "  * <<Plan>> <<港>>"
+    ],
+    "hits": 1
+   }
+  },
+  {
    "name": "paragraph hit shows the heading path",
    "args": [
     "# Trip\n\n## Food\n\nWe ate noodles at the market.\n\n## Hotels\n\nNo match here.\n",

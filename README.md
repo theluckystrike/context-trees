@@ -28,9 +28,9 @@ Select the arrow of a note or of any branch to fold it. The two buttons above th
 
 ### Readable internal links
 
-Wiki links in headings, parent items and matching lines show their name or alias. For example, `[[Project Atlas|the project]]` shows "the project" as a link. Select that link to open its target. Heading and block links keep their target. Hold Ctrl (Cmd on macOS) to open the target in a new tab. You can also use Tab to select a link, then press Enter or Space.
+Wiki links in headings, parent items and matching lines show their name or alias. For example, `[[Project Atlas|the project]]` shows "the project" as a link. Inline Markdown links to local notes also show their label. For example, `[the project](Project%20Atlas.md)` shows the same label. Select a link to open its target. Heading and block links keep their target. Hold Ctrl (Cmd on macOS) to open the target in a new tab. You can also use Tab to select a link, then press Enter or Space.
 
-Select the text beside a link to open the source note at that line. Search marks stay visible in link labels. If the query matches a hidden path, the visible label is marked. A missing target shows a notice and does not create a note. Code spans, embeds, Markdown links and other Markdown stay as text. This feature is free.
+Select the text beside a link to open the source note at that line. Search marks stay visible in link labels. If the query matches a hidden path, the visible label is marked. A missing target shows a notice and does not create a note. Code spans, embeds, external links, reference links and other Markdown stay as text. Inline links with a separate title stay as text. This feature is free.
 
 <img src="https://raw.githubusercontent.com/theluckystrike/context-trees/HEAD/docs/readable-links.png" alt="Search results with readable link aliases in headings, parent items and matching lines" width="720">
 

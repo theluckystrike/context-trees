@@ -11,3 +11,5 @@
 - Plan references
   - Select [[Project Atlas|the plan]] to open its target.
   - Select the rest of this line to open the source plan.
+
+- Read the [Markdown plan](Project%20Atlas.md#Decisions).

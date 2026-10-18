@@ -13,14 +13,14 @@ function escaped(text: string, at: number): boolean {
 	return slashes % 2 === 1;
 }
 
-/** Read wiki links without HTML or media. Keep code, embeds and broken links as text. */
+/** Read wiki links and inline Markdown links without HTML or media. Keep code, embeds and broken links as text. */
 export function linkParts(text: string, ranges: [number, number][] = []): LinkPart[] {
 	const parts: LinkPart[] = [];
 	const plain = (from: number, to: number): void => {
 		if (to <= from) return;
 		parts.push({ text: text.slice(from, to), ranges: mergeRanges(ranges.map(([a, b]): [number, number] => [Math.max(from, a) - from, Math.min(to, b) - from]).filter(([a, b]) => b > a)) });
 	};
-	const tokens = /`+|!?\[\[([^\]\n[]+)\]\]/g;
+	const tokens = /`+|!?\[\[([^\]\n[]+)\]\]|!?\[([^\]\n[]+)\]\((<[^>\n]+>|(?:[^\s()\\]|\\.|\([^\n()]*\))+)\)/g;
 	let code = '';
 	let at = 0;
 	for (let m = tokens.exec(text); m !== null; m = tokens.exec(text)) {
@@ -31,15 +31,21 @@ export function linkParts(text: string, ranges: [number, number][] = []): LinkPa
 			continue;
 		}
 		if (code !== '' || m[0].startsWith('!')) continue;
-		const inner = m[1] as string;
+		const markdown = m[2] !== undefined;
+		const inner = m[1] ?? '';
 		const pipe = inner.indexOf('|');
 		// In a table row the alias pipe is escaped as \|. The backslash is not part of the target.
-		const target = (pipe < 0 ? inner : inner.slice(0, pipe).replace(/\\$/, '')).trim();
-		const label = pipe < 0 ? inner : inner.slice(pipe + 1);
+		let target = (pipe < 0 ? inner : inner.slice(0, pipe).replace(/\\$/, '')).trim();
+		const label = markdown ? m[2]! : pipe < 0 ? inner : inner.slice(pipe + 1);
+		if (markdown) {
+			const destination = m[3]!;
+			target = destination.startsWith('<') ? destination.slice(1, -1) : destination.replace(/\\([()\\])/g, '$1');
+			try { target = decodeURI(target); } catch { continue; }
+		}
 		// A wiki link must name a vault path or a local heading/block, never a URL.
-		if (target === '' || label.trim() === '' || /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(target)) continue;
+		if (target === '' || label.trim() === '' || /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(target.trim()) || [...target].some(c => c.charCodeAt(0) < 32)) continue;
 		plain(at, m.index);
-		const from = m.index + 2 + (pipe < 0 ? 0 : pipe + 1);
+		const from = markdown ? m.index + 1 : m.index + 2 + (pipe < 0 ? 0 : pipe + 1);
 		const to = from + label.length;
 		const marks = ranges.map(([a, b]): [number, number] => [Math.max(from, a) - from, Math.min(to, b) - from]).filter(([a, b]) => b > a);
 		// If the match is in the hidden path or delimiters, mark the visible label.
