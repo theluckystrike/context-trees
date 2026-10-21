@@ -1,10 +1,12 @@
 # Context Trees
 
-Context Trees is a side view for Obsidian that shows where each search result and each backlink sits in its note. Above each hit you see the heading path and the parent list items above the matching line. Hits that share a parent show that parent once, so a note with five matches reads as one small outline.
+Context Trees shows search results and backlinks with their heading path and parent list items. Matching lines that share a parent appear in one context tree.
 
-Context Trees is a separate view. It does not patch, wrap or hide the core Search pane or the core Backlinks pane, and it does not change them. Those panes stay as they are. Context Trees opens next to them and reads your notes with the public Obsidian API only. It does not depend on the private code of those panes.
+Context Trees is separate from the core Search and Backlinks panes. It uses the public Obsidian API and does not change those panes or depend on their private code.
 
 <img src="https://raw.githubusercontent.com/theluckystrike/context-trees/HEAD/docs/demo.gif" alt="Search for pricing, refine the query, fold two notes, then switch to the backlinks of the open note" width="720">
+
+Free: search results and backlinks with heading and list context. Pro: regular expressions, saved queries, unlinked mentions, exports. $15 one time or $5 a month: [Sponsor](https://github.com/sponsors/theluckystrike?metadata_source=context-trees) or [$15 one-time offer](https://github.com/sponsors/theluckystrike/sponsorships?tier_id=666162&metadata_source=context-trees).
 
 ## Features
 
@@ -113,6 +115,8 @@ After sign in, Context Trees sends one query to `https://api.github.com/graphql`
 After a successful check, Pro can work offline for up to 14 days. Sign out or a negative sponsorship answer turns Pro off. The plugin stores the GitHub token through the secret storage API of Obsidian. It does not put the token in its saved settings or its local sponsorship data. The local storage of this device keeps your GitHub login, the tier and the time of the last check. Sign out clears the token. You can also revoke the access in your GitHub settings, under Applications.
 
 ## Support
+
+Plugin page: [context-trees](https://notemods.com/plugins/context-trees/).
 
 Report bugs and ask for features in the GitHub issues of this repository. Add your Obsidian version and a small sample note.
 
