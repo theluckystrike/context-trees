@@ -115,3 +115,7 @@ After a successful check, Pro can work offline for up to 14 days. Sign out or a 
 ## Support
 
 Report bugs and ask for features in the GitHub issues of this repository. Add your Obsidian version and a small sample note.
+
+## Community
+
+Questions, bugs or plugin ideas? Talk to me and other Obsidian users in [Zovo Chat](https://t.me/+k2MM-BIc7SQ5OWM0) on Telegram. It has a topic for these plugins. You can also open an issue here.
