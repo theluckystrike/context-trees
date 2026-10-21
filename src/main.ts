@@ -4,6 +4,8 @@ import { createGitHubSponsors } from './license/github-obsidian';
 import { SPONSORS, bindPro, isPro, resetPro } from './pro';
 import { DEFAULT_SETTINGS, ContextTreesSettingTab, normalizeSettings, type ContextTreesSettings } from './settings';
 import { ContextTreesView, VIEW_ID, type Mode } from './view';
+import { setupHello } from './hello/index';
+import WHATS_NEW from './whats-new.json';
 
 /** How often to ask the license state whether a check is due. It sends a request only when signed in and due (7 days). */
 const PRO_TICK_MS = 6 * 60 * 60 * 1000;
@@ -15,6 +17,8 @@ export default class ContextTreesPlugin extends Plugin {
 	private settingTab: ContextTreesSettingTab | null = null;
 
 	async onload(): Promise<void> {
+		// First: "What's new" reads its state before the settings load (packages/hello). It does not wait.
+		setupHello(this, WHATS_NEW);
 		await this.loadSettings();
 		// No request here: a request needs a GitHub sign in first (Settings, Pro, Sign in with GitHub).
 		const pro = createGitHubSponsors(this.app, this.manifest.id, SPONSORS, this);

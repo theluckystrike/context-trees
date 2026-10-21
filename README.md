@@ -2,7 +2,7 @@
 
 Context Trees shows search results and backlinks with their heading path and parent list items. Matching lines that share a parent appear in one context tree.
 
-Context Trees is separate from the core Search and Backlinks panes. It uses the public Obsidian API and does not change those panes or depend on their private code.
+Context Trees is its own view, built on the public Obsidian API. It does not change the core Search and Backlinks panes or depend on their private code.
 
 <img src="https://raw.githubusercontent.com/theluckystrike/context-trees/HEAD/docs/demo.gif" alt="Search for pricing, refine the query, fold two notes, then switch to the backlinks of the open note" width="720">
 
@@ -12,7 +12,7 @@ Free: search results and backlinks with heading and list context. Pro: regular e
 
 ### Search with context trees
 
-Type a word or a quoted phrase. Each word of the query must be on the same line. Each result note shows a tree: the headings above the match, then the parent list items, then the matching line with the hit marked. Two matches in the same list share the parents above them. The status line gives the number of matching lines, the number of notes and the time of the search. A line with two hits counts as one match.
+Type a word or a quoted phrase. Each word of the query must be on the same line. Each result note shows a tree: the headings above the match, then the parent list items, then the matching line with the hit marked. Two matches in the same list share the parents above them. The status line gives the count of matching lines and notes, and the search time. Two hits on one line count as one match.
 
 <img src="https://raw.githubusercontent.com/theluckystrike/context-trees/HEAD/docs/search-trees.png" alt="Search results for pricing, each note shown as a tree of headings and parent list items with the word marked" width="720">
 
@@ -24,7 +24,7 @@ Open the Backlinks tab to see the notes that link to the open note. Each linking
 
 ### Fold, unfold and open at the line
 
-Select the arrow of a note or of any branch to fold it. The two buttons above the results fold or unfold each note and branch in the results. Select a line to open its note with the cursor on that line. Hold Ctrl (Cmd on macOS) to open it in a new tab. Select a note name to open the note at the top.
+Select the arrow of a note or of any branch to fold it. The two buttons above the results fold or unfold all of them. Select a line to open its note with the cursor on that line. Hold Ctrl (Cmd on macOS) to open it in a new tab. Select a note name to open the note at the top.
 
 <img src="https://raw.githubusercontent.com/theluckystrike/context-trees/HEAD/docs/fold.png" alt="Search results where four notes are folded to their names and match counts" width="720">
 
@@ -32,7 +32,7 @@ Select the arrow of a note or of any branch to fold it. The two buttons above th
 
 Wiki links in headings, parent items and matching lines show their name or alias. For example, `[[Project Atlas|the project]]` shows "the project" as a link. Inline Markdown links to local notes also show their label. For example, `[the project](Project%20Atlas.md)` shows the same label. Select a link to open its target. Heading and block links keep their target. Hold Ctrl (Cmd on macOS) to open the target in a new tab. You can also use Tab to select a link, then press Enter or Space.
 
-Select the text beside a link to open the source note at that line. Search marks stay visible in link labels. If the query matches a hidden path, the visible label is marked. A missing target shows a notice and does not create a note. Code spans, embeds, external links, reference links and other Markdown stay as text. Inline links with a separate title stay as text. This feature is free.
+Select the text beside a link to open the source line. Search marks stay visible in link labels. If the query matches a hidden path, the visible label is marked. A missing target shows a notice and does not create a note. Code spans, embeds, external links, reference links and other Markdown stay as text. Inline links with a separate title stay as text. This feature is free.
 
 <img src="https://raw.githubusercontent.com/theluckystrike/context-trees/HEAD/docs/readable-links.png" alt="Search results with readable link aliases in headings, parent items and matching lines" width="720">
 
@@ -68,9 +68,11 @@ To install by hand, copy `main.js`, `manifest.json` and `styles.css` from the la
 3. Select Backlinks to see the links to the open note.
 4. Use the command "Search the vault" to open the view with the cursor in the search box.
 
-Context Trees reads the headings and the list items from the Obsidian metadata cache, so it uses the same idea of a list item that Obsidian uses. The properties block of a note is not searched. If a note has no cache yet, for example a note that you made a moment ago, the view reads its headings and lists from the text.
+Context Trees reads headings and list items from the Obsidian metadata cache, so its list items match those of Obsidian. The properties block of a note is not searched. If a note has no cache yet, such as a brand new note, the view reads its headings and lists from the text.
 
 ## Settings
+
+After a minor or major update, this plugin opens one What's new tab in the background. The tab and settings card suggest other NoteMods plugins and Zovo Chat and link to notemods.com for feedback ([privacy](https://notemods.com/privacy/)). The tab sends no data. Turn the tab off in Settings.
 
 | Setting | What it does |
 | --- | --- |
@@ -84,19 +86,19 @@ The settings tab also has the Pro section: sign in with GitHub, the status and R
 
 ### Is this a fork of Better Search Views?
 
-No. Context Trees has no code from Better Search Views and its author did not make it. It solves a similar job in a different way. Better Search Views changes the core panes by patching private parts of Obsidian. Context Trees is its own view and uses only the public API.
+No. Context Trees has no code from Better Search Views, and its author did not make it. It solves a similar job differently. Better Search Views changes the core panes by patching private parts of Obsidian. Context Trees uses only the public API.
 
 ### Does it change the core Search pane?
 
-No. The core Search and Backlinks panes work as before. Their syntax, such as `path:` and `tag:`, is not available here. Context Trees searches the text of each line.
+No. The core panes work as before. Their syntax, such as `path:` and `tag:`, is not available here. Context Trees searches the text of each line.
 
 ### How fast is it?
 
-The end-to-end test makes a vault of 2,000 small notes. In that test, the first results must show in less than 1 second, and a full search must end in less than 4 seconds. The view reads 48 notes at a time and shows results while it reads. The time on your device depends on the device and on the size of your notes.
+In the end-to-end test with 2,000 small notes, the first results must show in less than 1 second, and a full search must end in less than 4 seconds. The view reads 48 notes at a time and shows results while it reads. Your time depends on your device and the size of your notes.
 
 ### Can I open a link from a result?
 
-Yes. Select a wiki link label to open the target note. Select the rest of the row to open the source line. The view reads the target relative to the source note, so two notes with the same name follow the normal Obsidian link rules. Export keeps the original link text.
+Yes, see Readable internal links. The view reads the target relative to the source note, so two notes with the same name follow the normal Obsidian link rules. Export keeps the original link text.
 
 ### Does it change my notes?
 
@@ -118,7 +120,7 @@ After a successful check, Pro can work offline for up to 14 days. Sign out or a 
 
 Plugin page: [context-trees](https://notemods.com/plugins/context-trees/).
 
-Report bugs and ask for features in the GitHub issues of this repository. Add your Obsidian version and a small sample note.
+Report bugs and ask for features in the GitHub issues of this repository, with your Obsidian version and a small sample note.
 
 ## Community
 
