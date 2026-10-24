@@ -6,6 +6,7 @@ import { DEFAULT_SETTINGS, ContextTreesSettingTab, normalizeSettings, type Conte
 import { ContextTreesView, VIEW_ID, type Mode } from './view';
 import { setupHello } from './hello/index';
 import WHATS_NEW from './whats-new.json';
+import { movePath, touchesPath } from './memory';
 
 /** How often to ask the license state whether a check is due. It sends a request only when signed in and due (7 days). */
 const PRO_TICK_MS = 6 * 60 * 60 * 1000;
@@ -43,6 +44,9 @@ export default class ContextTreesPlugin extends Plugin {
 				return true;
 			},
 		});
+		// The saved view state follows a renamed note and forgets a deleted one.
+		this.registerEvent(this.app.vault.on('rename', (f, oldPath) => this.moveMemory(oldPath, f.path)));
+		this.registerEvent(this.app.vault.on('delete', (f) => this.moveMemory(f.path, null)));
 		this.app.workspace.onLayoutReady(() => {
 			void pro.refresh();
 			this.registerInterval(window.setInterval(() => void pro.refresh(), PRO_TICK_MS));
@@ -50,6 +54,10 @@ export default class ContextTreesPlugin extends Plugin {
 	}
 
 	onunload(): void {
+		if (this.saveTimer !== null) {
+			window.clearTimeout(this.saveTimer);
+			void this.saveSettings();
+		}
 		resetPro();
 	}
 
@@ -78,6 +86,20 @@ export default class ContextTreesPlugin extends Plugin {
 	/** Redraws every open view (settings changed). */
 	refreshViews(): void {
 		for (const leaf of this.app.workspace.getLeavesOfType(VIEW_ID)) if (leaf.view instanceof ContextTreesView) leaf.view.refresh();
+	}
+
+	private saveTimer: number | null = null;
+
+	/** Moves or removes the saved view state of a note in data.json and in each open view. One save after a quiet time, so a deleted folder gives one save. */
+	moveMemory(oldPath: string, newPath: string | null): void {
+		for (const leaf of this.app.workspace.getLeavesOfType(VIEW_ID)) if (leaf.view instanceof ContextTreesView) leaf.view.movePathInMemory(oldPath, newPath);
+		if (!touchesPath(this.settings.memory, oldPath)) return;
+		this.settings.memory = movePath(this.settings.memory, oldPath, newPath);
+		if (this.saveTimer !== null) window.clearTimeout(this.saveTimer);
+		this.saveTimer = window.setTimeout(() => {
+			this.saveTimer = null;
+			void this.saveSettings();
+		}, 500);
 	}
 
 	async loadSettings(): Promise<void> {

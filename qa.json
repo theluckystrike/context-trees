@@ -41,10 +41,26 @@
 	},
 	{
 		"feature": "unlinked-mentions",
-		"caption": "Pro: notes that say Atlas without linking to it, with the context of each mention.",
+		"caption": "Unlinked mentions of Project Atlas. Text in links, URLs, tags and code does not count, so the Atlas sources note shows only its two plain text lines.",
 		"note": "Project Atlas.md",
-		"eval": "(async()=>{ const pro=app.plugins.plugins['context-trees'].pro; pro.opts.http=async()=>({status:200,json:{data:{viewer:{login:'demo-reader'},user:{sponsorshipForViewerAsSponsor:{isActive:true,isOneTimePayment:false,tier:{name:'$5 a month',monthlyPriceInCents:500}}}}}}); app.secretStorage.setSecret('context-trees-github-token','gho_'+'0'.repeat(36)); await pro.refreshNow(); await new Promise(r=>setTimeout(r,500)); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); const leaf=app.workspace.getLeaf('split','vertical'); await leaf.setViewState({type:'context-trees',active:true,state:{mode:'unlinked',query:\"\",regex:false}}); await app.plugins.plugins['context-trees'].firstView().runNow(); await new Promise(r=>setTimeout(r,500));  return 'ok'; })()",
+		"eval": "(async()=>{ app.plugins.plugins['context-trees'].pro.signOut(); await new Promise(r=>setTimeout(r,300)); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); const leaf=app.workspace.getLeaf('split','vertical'); await leaf.setViewState({type:'context-trees',active:true,state:{mode:'unlinked',query:\"\",regex:false}}); await app.plugins.plugins['context-trees'].firstView().runNow(); await new Promise(r=>setTimeout(r,500)); return 'ok'; })()",
 		"after": "(async()=>{ app.plugins.plugins['context-trees'].pro.signOut(); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); return 'ok'; })()",
+		"wait": 900
+	},
+	{
+		"feature": "mention-ignore",
+		"caption": "Ignored terms: with Atlas macros and Atlas reviews on the list, those mentions no longer show.",
+		"note": "Project Atlas.md",
+		"eval": "(async()=>{ const p=app.plugins.plugins['context-trees']; p.pro.signOut(); p.settings.ignoreTerms='Atlas macros\\nAtlas reviews'; await p.saveSettings(); await new Promise(r=>setTimeout(r,300)); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); const leaf=app.workspace.getLeaf('split','vertical'); await leaf.setViewState({type:'context-trees',active:true,state:{mode:'unlinked',query:\"\",regex:false}}); await p.firstView().runNow(); await new Promise(r=>setTimeout(r,500)); return 'ok'; })()",
+		"after": "(async()=>{ const p=app.plugins.plugins['context-trees']; p.settings.ignoreTerms=''; await p.saveSettings(); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); return 'ok'; })()",
+		"wait": 900
+	},
+	{
+		"feature": "remember-view",
+		"caption": "Remember the view state: the Backlinks tab, the sort order Name, Z to A and a folded note come back when the view opens again.",
+		"note": "Project Atlas.md",
+		"eval": "(async()=>{ const p=app.plugins.plugins['context-trees']; p.pro.signOut(); p.settings.remember='global'; p.settings.memory={shared:null,notes:{}}; await p.saveSettings(); await new Promise(r=>setTimeout(r,300)); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); let leaf=app.workspace.getLeaf('split','vertical'); await leaf.setViewState({type:'context-trees',active:true,state:{mode:'backlinks',query:\"\",regex:false}}); const v=p.firstView(); v.setSort('name-desc'); await v.runNow(); document.querySelector('.ct-file .ct-file-head .ct-toggle').click(); await new Promise(r=>setTimeout(r,700)); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); leaf=app.workspace.getLeaf('split','vertical'); await leaf.setViewState({type:'context-trees',active:true}); await p.firstView().runNow(); await new Promise(r=>setTimeout(r,500)); return 'ok'; })()",
+		"after": "(async()=>{ const p=app.plugins.plugins['context-trees']; p.settings.remember='off'; p.settings.memory={shared:null,notes:{}}; await p.saveSettings(); app.workspace.getLeavesOfType('context-trees').forEach(l=>l.detach()); return 'ok'; })()",
 		"wait": 900
 	},
 	{

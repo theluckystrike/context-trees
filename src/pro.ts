@@ -15,7 +15,7 @@ export const SPONSORS: SponsorsConfig = {
 };
 
 export const PRO_UI = {
-	proSummary: 'Pro adds regular expression search, unlinked mentions with their context, saved queries, and export of the results with their context as a Markdown note.',
+	proSummary: 'Pro adds regular expression search, saved queries, export of the results with their context as a Markdown note, and a separate view state for each note.',
 	priceText: 'Sponsor $5 a month, or $15 once. When you have paid $15 in total, Pro stays on.',
 };
 

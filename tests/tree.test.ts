@@ -163,3 +163,20 @@ describe('audit fixes', () => {
 		expect(findMentions(['İstanbul pricing'], ['Pricing'], new Map())).toEqual([{ line: 0, ranges: [[9, 16]] }]);
 	});
 });
+
+describe('buildTree cost (review R5)', () => {
+	it('merges 20,000 hits in one note in well under a second', async () => {
+		const { buildTree: build } = await import('../src/tree');
+		const { structureFromMarkdown } = await import('../src/reference');
+		const { findUnlinked } = await import('../src/mentions');
+		const lines = Array.from({ length: 20000 }, (_, i) => (i % 100 === 0 ? `## Part ${i}` : `- ${i} entry about Atlas with [[Link ${i}]] https://x.io/${i}`));
+		const hits = findUnlinked(lines, ['Atlas'], 0);
+		expect(hits.length).toBe(19800);
+		const t0 = performance.now();
+		const tree = build(lines, structureFromMarkdown(lines), hits);
+		// ESTIMATE of the budget: the old code took 2.4 s at 20,000 hits (review probe); a linear merge takes a few ms.
+		expect(performance.now() - t0).toBeLessThan(500);
+		expect(tree).toHaveLength(200);
+		expect(tree[1]?.line).toBe(100);
+	});
+});

@@ -1,5 +1,11 @@
 # context-trees
 
+## 1.4.0
+
+### Minor Changes
+
+- 34096a0: Free unlinked mentions skip links, Markdown links, URLs, tags, code and properties. Add ignored terms, ignored folders and an opt-out property. Add a sort order and an optional remembered view state.
+
 ## 1.3.0
 
 ### Minor Changes

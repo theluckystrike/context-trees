@@ -2,6 +2,7 @@
 // stands in when a note has no cache yet (new note, first start), and it drives the golden vectors in tests.
 import { findHits, parseQuery } from './search';
 import { linkParts } from './links';
+import { findUnlinked } from './mentions';
 import { buildTree, type HeadingRef, type ItemRef, type NoteStructure, type TreeNode } from './tree';
 
 const ATX = /^ {0,3}(#{1,6})[ \t]+(.*?)(?:[ \t]+#+)?[ \t]*$/;
@@ -101,13 +102,25 @@ export function outline(nodes: TreeNode[], depth = 0): string[] {
 export interface TreesOptions {
 	regex?: boolean;
 	caseSensitive?: boolean;
+	/** Unlinked mentions: the query text is the note name, and `aliases` adds names. */
+	unlinked?: boolean;
+	aliases?: string[];
+	/** Unlinked mentions: count mentions in fenced code blocks. */
+	codeBlocks?: boolean;
+	/** Unlinked mentions: ignored terms. */
+	ignore?: string[];
 }
 
 /** Search a Markdown text for a query and return the outline of the merged context tree. The function that the golden vectors test. */
 export function trees(markdown: string, queryText: string, opts: TreesOptions = {}): { outline: string[]; hits: number; error: string } {
+	const lines = splitLines(markdown);
+	if (opts.unlinked === true) {
+		const rules = { codeBlocks: opts.codeBlocks === true, ignore: opts.ignore ?? [] };
+		const hits = findUnlinked(lines, [queryText, ...(opts.aliases ?? [])], frontmatterEnd(lines), rules);
+		return { outline: outline(buildTree(lines, structureFromMarkdown(lines), hits)), hits: hits.length, error: '' };
+	}
 	const parsed = parseQuery(queryText, opts);
 	if (!parsed.ok) return { outline: [], hits: 0, error: parsed.error };
-	const lines = splitLines(markdown);
 	const hits = findHits(lines, parsed.query, frontmatterEnd(lines));
 	const tree = buildTree(lines, structureFromMarkdown(lines), hits);
 	return { outline: outline(tree), hits: hits.length, error: '' };

@@ -154,17 +154,24 @@ function shift(ranges: [number, number][], raw: string, mode: 'item' | 'heading'
 	return out;
 }
 
-/** Merges the context chains of all hits in one note into a forest, children sorted by line. */
+/** Merges the context chains of all hits in one note into a forest, children sorted by line. Linear in the hits: a map for each level, one sort at the end. */
 export function buildTree(lines: string[], s: NoteStructure, hits: Hit[]): TreeNode[] {
 	const roots: TreeNode[] = [];
+	const index = new Map<TreeNode[], Map<string, TreeNode>>();
+	const keyOf = (n: TreeNode): string => `${n.kind}:${n.line}`;
 	for (const h of hits) {
 		let level = roots;
 		for (const n of contextChain(lines, s, h)) {
-			let existing = level.find((x) => x.kind === n.kind && x.line === n.line);
+			let map = index.get(level);
+			if (!map) {
+				map = new Map();
+				index.set(level, map);
+			}
+			let existing = map.get(keyOf(n));
 			if (!existing) {
 				existing = n;
 				level.push(n);
-				level.sort((a, b) => a.line - b.line);
+				map.set(keyOf(n), n);
 			} else if (n.hit) {
 				existing.hit = true;
 				existing.ranges = n.ranges;
@@ -172,6 +179,11 @@ export function buildTree(lines: string[], s: NoteStructure, hits: Hit[]): TreeN
 			level = existing.children;
 		}
 	}
+	const sortAll = (level: TreeNode[]): void => {
+		level.sort((a, b) => a.line - b.line);
+		for (const n of level) if (n.children.length > 0) sortAll(n.children);
+	};
+	sortAll(roots);
 	return roots;
 }
 

@@ -2,7 +2,7 @@
  "slug": "context-trees",
  "module": "context-trees/src/reference",
  "function": "trees",
- "note": "args = [Markdown text, query text, options {regex, caseSensitive}]; expected = {outline, hits}. outline has one line for each tree node, indented by depth: '*' marks a hit, '-' a context line, headings start with their # signs and hits are wrapped in <<>>. Expected values are written by hand. A hit counts one for each matching line. Only the fields present are compared. Wiki links show their names or aliases; a hit in a hidden target marks the visible label.",
+ "note": "args = [Markdown text, query text, options {regex, caseSensitive}]; expected = {outline, hits}. outline has one line for each tree node, indented by depth: '*' marks a hit, '-' a context line, headings start with their # signs and hits are wrapped in <<>>. Expected values are written by hand. A hit counts one for each matching line. Only the fields present are compared. Wiki links show their names or aliases; a hit in a hidden target marks the visible label. With options.unlinked true, the query text is the note name and the hits are unlinked mentions: text in links, Markdown links, URLs, tags, inline code, fenced code (unless codeBlocks), front matter and ignored terms does not count.",
  "cases": [
   {
    "name": "Markdown link label marks a hidden target match",
@@ -480,6 +480,726 @@
     "outline": [
      "- # Context",
      "  * Note#Heading and block <<needle>>"
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "unlinked: a plain mention counts",
+   "args": [
+    "# Notes\n\nWe met Atlas today.\n",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [
+     "- # Notes",
+     "  * We met <<Atlas>> today."
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "unlinked: text inside wiki links and aliases does not count",
+   "args": [
+    "Read [[Atlas]] and [[Atlas notes|the Atlas plan]].\n",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [],
+    "hits": 0
+   }
+  },
+  {
+   "name": "unlinked: a mention next to a wiki link still counts",
+   "args": [
+    "See [[Atlas]] for Atlas.\n",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [
+     "* See Atlas for <<Atlas>>."
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "unlinked: external Markdown link label and URL do not count",
+   "args": [
+    "[the Atlas site](https://example.com/atlas)\n",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [],
+    "hits": 0
+   }
+  },
+  {
+   "name": "unlinked: internal Markdown link does not count",
+   "args": [
+    "[about Atlas](Projects/Atlas.md)\n",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [],
+    "hits": 0
+   }
+  },
+  {
+   "name": "unlinked: Markdown link with a title does not count",
+   "args": [
+    "[x](https://a.com \"Atlas title\")\n",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [],
+    "hits": 0
+   }
+  },
+  {
+   "name": "unlinked: Markdown image does not count",
+   "args": [
+    "![Atlas](atlas.png)\n",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [],
+    "hits": 0
+   }
+  },
+  {
+   "name": "unlinked: bare URLs do not count",
+   "args": [
+    "Docs at https://example.com/atlas/guide and http://atlas.io\n",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [],
+    "hits": 0
+   }
+  },
+  {
+   "name": "unlinked: obsidian URL does not count",
+   "args": [
+    "obsidian://open?vault=Atlas\n",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [],
+    "hits": 0
+   }
+  },
+  {
+   "name": "unlinked: www address does not count",
+   "args": [
+    "www.atlas.com\n",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [],
+    "hits": 0
+   }
+  },
+  {
+   "name": "unlinked: autolink does not count",
+   "args": [
+    "<https://atlas.example.com>\n",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [],
+    "hits": 0
+   }
+  },
+  {
+   "name": "unlinked: tags and nested tags do not count",
+   "args": [
+    "Tagged #atlas and #project/atlas\n",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [],
+    "hits": 0
+   }
+  },
+  {
+   "name": "unlinked: a heading is not a tag",
+   "args": [
+    "# Atlas\n",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [
+     "* # <<Atlas>>"
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "unlinked: inline code does not count",
+   "args": [
+    "Run `atlas build` and ``atlas` x`` now\n",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [],
+    "hits": 0
+   }
+  },
+  {
+   "name": "unlinked: fenced code does not count, text after it does",
+   "args": [
+    "```\nAtlas inside\n```\nAtlas outside\n",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [
+     "* <<Atlas>> outside"
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "unlinked: tilde fence does not count",
+   "args": [
+    "~~~\nAtlas\n~~~\n",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [],
+    "hits": 0
+   }
+  },
+  {
+   "name": "unlinked: code block setting counts text in a fence",
+   "args": [
+    "```\nAtlas inside\n```\n",
+    "Atlas",
+    {
+     "unlinked": true,
+     "codeBlocks": true
+    }
+   ],
+   "expected": {
+    "outline": [
+     "* <<Atlas>> inside"
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "unlinked: the language tag of a fence never counts",
+   "args": [
+    "```atlas\ncode\n```\n",
+    "Atlas",
+    {
+     "unlinked": true,
+     "codeBlocks": true
+    }
+   ],
+   "expected": {
+    "outline": [],
+    "hits": 0
+   }
+  },
+  {
+   "name": "unlinked: front matter does not count",
+   "args": [
+    "---\ntitle: Atlas\n---\nAtlas body\n",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [
+     "* <<Atlas>> body"
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "unlinked: an ignored phrase hides the mention inside it",
+   "args": [
+    "Atlas Copco makes tools. Atlas ships soon.\n",
+    "Atlas",
+    {
+     "unlinked": true,
+     "ignore": [
+      "atlas copco"
+     ]
+    }
+   ],
+   "expected": {
+    "outline": [
+     "* Atlas Copco makes tools. <<Atlas>> ships soon."
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "unlinked: an ignored term equal to the name hides every mention",
+   "args": [
+    "Atlas here\n",
+    "Atlas",
+    {
+     "unlinked": true,
+     "ignore": [
+      "ATLAS"
+     ]
+    }
+   ],
+   "expected": {
+    "outline": [],
+    "hits": 0
+   }
+  },
+  {
+   "name": "unlinked: escaped brackets are text",
+   "args": [
+    "\\[[Atlas]] is text\n",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [
+     "* \\[[<<Atlas>>]] is text"
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "unlinked: whole words only",
+   "args": [
+    "Atlases and Atlas-like\n",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [
+     "* Atlases and <<Atlas>>-like"
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "unlinked: aliases count",
+   "args": [
+    "PA met. Project Atlas too.\n",
+    "Project Atlas",
+    {
+     "unlinked": true,
+     "aliases": [
+      "PA"
+     ]
+    }
+   ],
+   "expected": {
+    "outline": [
+     "* <<PA>> met. <<Project Atlas>> too."
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "unlinked: a URL item keeps out, its sibling counts with the parent item",
+   "args": [
+    "- Links\n  - https://atlas.dev\n  - Atlas review\n",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [
+     "- Links",
+     "  * <<Atlas>> review"
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "unlinked: a fence inside a callout does not count",
+   "args": [
+    "> [!note]\n> ```\n> Atlas in code\n> ```\nAtlas after",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [
+     "* <<Atlas>> after"
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "unlinked: a fence in a list item indented with a tab does not count",
+   "args": [
+    "- item\n\t```\n\tAtlas in code\n\t```\n- Atlas next",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [
+     "* <<Atlas>> next"
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "unlinked: a fence in a list item indented with 4 spaces does not count",
+   "args": [
+    "- item\n    ```\n    Atlas in code\n    ```\n- next",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [],
+    "hits": 0
+   }
+  },
+  {
+   "name": "unlinked: an indented code block does not count",
+   "args": [
+    "para\n\n    Atlas code\n\npara",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [],
+    "hits": 0
+   }
+  },
+  {
+   "name": "unlinked: an indented list continuation still counts",
+   "args": [
+    "- item\n\n    Atlas in the item",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [
+     "* <<Atlas>> in the item"
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "unlinked: a link label with nested brackets does not count",
+   "args": [
+    "Read [the [Atlas] plan](https://x.io) now",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [],
+    "hits": 0
+   }
+  },
+  {
+   "name": "unlinked: a link with a single-quoted title does not count",
+   "args": [
+    "Read [Atlas](notes.md 'title') now",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [],
+    "hits": 0
+   }
+  },
+  {
+   "name": "unlinked: reference links and their definitions do not count",
+   "args": [
+    "Read [Atlas][1] now\n\n[1]: https://x.io",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [],
+    "hits": 0
+   }
+  },
+  {
+   "name": "unlinked: comments, inline math and footnote references do not count",
+   "args": [
+    "%% Atlas %% $Atlas$ text[^Atlas] <a href=\"x\">Atlas</a>",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [],
+    "hits": 0
+   }
+  },
+  {
+   "name": "unlinked: a Chinese name counts inside a sentence",
+   "args": [
+    "我们明天去东京开会",
+    "东京",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [
+     "* 我们明天去<<东京>>开会"
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "unlinked: a Japanese name counts next to particles",
+   "args": [
+    "私は東京に行く",
+    "東京",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [
+     "* 私は<<東京>>に行く"
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "unlinked: an unclosed backtick run is text, a later code span is code",
+   "args": [
+    "a `` b `Atlas` c",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [],
+    "hits": 0
+   }
+  },
+  {
+   "name": "unlinked: footnote definition text counts",
+   "args": [
+    "Text[^1]\n\n[^1]: Atlas launched in 2024.",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [
+     "* [^1]: <<Atlas>> launched in 2024."
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "unlinked: a line that starts with a label and a colon counts",
+   "args": [
+    "[Draft]: Atlas needs review",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [
+     "* [Draft]: <<Atlas>> needs review"
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "unlinked: a reference definition with a URL does not count",
+   "args": [
+    "[1]: https://x.io/atlas \"Atlas\"",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [],
+    "hits": 0
+   }
+  },
+  {
+   "name": "unlinked: a list item that starts with triple-backtick inline code does not open a fence",
+   "args": [
+    "- ```x``` here\n- Atlas ships",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [
+     "* <<Atlas>> ships"
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "unlinked: a dollar before a digit does not end inline math",
+   "args": [
+    "Prices $5 for Atlas,$10 for Pro",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [
+     "* Prices $5 for <<Atlas>>,$10 for Pro"
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "unlinked: a bracket pair without a definition is text",
+   "args": [
+    "- [x][Atlas] review",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [
+     "* [x][<<Atlas>>] review"
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "unlinked: a reference link with a definition does not count",
+   "args": [
+    "See [the plan][Atlas]\n\n[atlas]: https://x.io",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [],
+    "hits": 0
+   }
+  },
+  {
+   "name": "unlinked: a comment block over more lines does not count",
+   "args": [
+    "%%\nAtlas draft\n%%\nAtlas after",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [
+     "* <<Atlas>> after"
+    ],
+    "hits": 1
+   }
+  },
+  {
+   "name": "unlinked: a %% inside inline code does not open a comment",
+   "args": [
+    "Use `%%` to hide text.\nAtlas ships\nAtlas again",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [
+     "* <<Atlas>> ships",
+     "* <<Atlas>> again"
+    ],
+    "hits": 2
+   }
+  },
+  {
+   "name": "unlinked: a %% inside inline code, then a real comment",
+   "args": [
+    "Type `%%` here %% c %% Atlas",
+    "Atlas",
+    {
+     "unlinked": true
+    }
+   ],
+   "expected": {
+    "outline": [
+     "* Type `%%` here %% c %% <<Atlas>>"
     ],
     "hits": 1
    }

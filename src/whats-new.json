@@ -1,18 +1,13 @@
 {
 	"id": "context-trees",
 	"name": "Context Trees",
-	"version": "1.3.0",
+	"version": "1.4.0",
 	"changes": [
-		"New Send feedback command. It opens a page where you can report a problem or suggest an idea.",
-		"Shows labels for local inline Markdown links in context trees.",
-		"Keeps search highlights and link navigation."
+		"Unlinked mentions are now free. They no longer count text in URLs, external links, tags or code.",
+		"New settings for unlinked mentions: ignored terms, ignored folders, and a note property to opt a note out.",
+		"Sort the results by name or modified time, and turn on Remember the view state to keep the tab, sort and folds."
 	],
-	"changes_user": [
-		"New Send feedback command. It opens a page where you can report a problem or suggest an idea.",
-		"Inline Markdown links to your notes now show their label in the tree. Search highlights stay visible, and you can select a link to open its note.",
-		"Unlinked mentions with accented or non-Latin words now match correctly."
-	],
-	"tip": "Switch on the regular expression button to search each line with a pattern, with Pro.",
+	"tip": "Turn on Remember the view state in the settings to keep your folds and sort order between notes.",
 	"thanks": "Hi, I am Michael, a solo developer in Poland. Context Trees is one of over 100 small plugins that I make. Thank you for using it to find things in your vault.",
 	"related": [
 		{

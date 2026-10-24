@@ -1,15 +1,17 @@
-import { ItemView, Keymap, Notice, TFile, getLinkpath, setIcon, type ViewStateResult, type WorkspaceLeaf } from 'obsidian';
+import { ItemView, Keymap, Menu, Notice, TFile, getLinkpath, setIcon, type ViewStateResult, type WorkspaceLeaf } from 'obsidian';
 import { isPro, onProChange } from './pro';
 import { drawLinkText } from './links';
 import { backlinkSources, bodyStart, linkHits, linkRangesByLine, namesOf, structureFor } from './notes';
-import { findHits, findMentions, parseQuery } from './search';
+import { findHits, parseQuery } from './search';
+import { codeSectionLines, findUnlinked, inFolders, listOf, optOut } from './mentions';
+import { EMPTY_MEMORY, SORTS, branchFolded, branchKey, foldAllMemory, movePath, noteFolded, putNote, sortFiles, toggleKey, type Mode, type RememberMode, type SortOrder, type ViewMemory } from './memory';
 import { splitLines } from './reference';
 import { buildTree, countHits, treeToMarkdown, type Hit, type TreeNode } from './tree';
 import type { SavedQuery } from './settings';
 import type ContextTreesPlugin from './main';
 
 export const VIEW_ID = 'context-trees';
-export type Mode = 'search' | 'backlinks' | 'unlinked';
+export type { Mode } from './memory';
 const MODES: { id: Mode; label: string }[] = [
 	{ id: 'search', label: 'Search' },
 	{ id: 'backlinks', label: 'Backlinks' },
@@ -17,6 +19,10 @@ const MODES: { id: Mode; label: string }[] = [
 ];
 /** Notes read at once. Reads run in parallel inside a batch; the view redraws and yields between batches. */
 const BATCH = 48;
+/** The scan gives the editor a turn after this much work, so typing does not wait for a long scan. */
+const SLICE_MS = 8;
+/** Quiet time before the view state goes to data.json. */
+const SAVE_MS = 400;
 
 interface FileResult {
 	path: string;
@@ -34,6 +40,8 @@ export interface ScanStats {
 	firstMs: number | null;
 	totalMs: number;
 	done: boolean;
+	/** Longest stretch of work in ms between two turns of the editor. */
+	maxBlockMs: number;
 }
 
 const sleep0 = (): Promise<void> => new Promise((r) => window.setTimeout(r, 0));
@@ -43,6 +51,9 @@ export class ContextTreesView extends ItemView {
 	private query = '';
 	private regex = false;
 	private caseSensitive = false;
+	/** Sort order and folds. Kept in data.json when "Remember the view state" is on. */
+	private mem: ViewMemory = { ...EMPTY_MEMORY };
+	private saveTimer: number | null = null;
 	private target: TFile | null = null;
 	private token = 0;
 	private results: FileResult[] = [];
@@ -73,15 +84,17 @@ export class ContextTreesView extends ItemView {
 	}
 
 	getState(): Record<string, unknown> {
-		return { mode: this.mode, query: this.query, regex: this.regex, caseSensitive: this.caseSensitive };
+		return { mode: this.mode, query: this.query, regex: this.regex, caseSensitive: this.caseSensitive, sort: this.mem.sort };
 	}
 
 	async setState(state: unknown, result: ViewStateResult): Promise<void> {
-		const s = (state ?? {}) as { mode?: unknown; query?: unknown; regex?: unknown; caseSensitive?: unknown };
+		const s = (state ?? {}) as { mode?: unknown; query?: unknown; regex?: unknown; caseSensitive?: unknown; sort?: unknown };
 		if (s.mode === 'search' || s.mode === 'backlinks' || s.mode === 'unlinked') this.mode = s.mode;
 		if (typeof s.query === 'string') this.query = s.query;
-		this.regex = s.regex === true;
-		this.caseSensitive = s.caseSensitive === true;
+		if (typeof s.regex === 'boolean') this.regex = s.regex;
+		if (typeof s.caseSensitive === 'boolean') this.caseSensitive = s.caseSensitive;
+		if (SORTS.some((x) => x.id === s.sort)) this.mem = { ...this.mem, sort: s.sort as SortOrder };
+		this.remember();
 		if (this.inputEl) {
 			this.syncHeader();
 			this.schedule(0);
@@ -98,6 +111,7 @@ export class ContextTreesView extends ItemView {
 		this.inputEl = this.inputRow.createEl('input', { cls: 'ct-input', attr: { type: 'search', placeholder: 'Search the vault', 'aria-label': 'Search query' } });
 		this.registerDomEvent(this.inputEl, 'input', () => {
 			this.query = this.inputEl.value;
+			this.remember();
 			this.schedule(this.plugin.settings.debounceMs);
 		});
 		this.registerDomEvent(this.inputEl, 'keydown', (e) => {
@@ -110,8 +124,14 @@ export class ContextTreesView extends ItemView {
 		this.register(onProChange(() => this.syncHeader()));
 		this.registerEvent(
 			this.app.workspace.on('file-open', (f) => {
-				if (!f) return;
+				if (!f || f.path === this.target?.path) return;
 				this.target = f;
+				if (this.rememberMode() === 'note') {
+					this.applyMemory(this.memoryFor(f.path));
+					this.syncHeader();
+					this.schedule(0);
+					return;
+				}
 				if (this.mode !== 'search') this.schedule(150);
 			}),
 		);
@@ -120,6 +140,8 @@ export class ContextTreesView extends ItemView {
 		};
 		this.registerEvent(this.app.metadataCache.on('resolved', refresh));
 		this.registerEvent(this.app.metadataCache.on('changed', refresh));
+		this.target = this.app.workspace.getActiveFile();
+		if (this.rememberMode() !== 'off') this.applyMemory(this.memoryFor(this.target?.path ?? null));
 		this.syncHeader();
 		this.schedule(0);
 		return Promise.resolve();
@@ -128,7 +150,87 @@ export class ContextTreesView extends ItemView {
 	onClose(): Promise<void> {
 		this.token++;
 		if (this.timer !== null) window.clearTimeout(this.timer);
+		this.flushSave();
 		return Promise.resolve();
+	}
+
+	// ---- view memory (forum topic 20341) -------------------------------------------------------------------
+
+	/** The memory mode in use. "For each note" needs Pro; without Pro it works like "For all notes". */
+	rememberMode(): RememberMode {
+		const r = this.plugin.settings.remember;
+		return r === 'note' && !isPro() ? 'global' : r;
+	}
+
+	/** The saved state for a note (per-note mode) or for all notes. A note with no entry keeps the tab, query and sort, with fresh folds. */
+	private memoryFor(path: string | null): ViewMemory | null {
+		const store = this.plugin.settings.memory;
+		if (this.rememberMode() === 'global') return store.shared;
+		if (path === null) return null;
+		return store.notes[path] ?? { ...this.snapshot(), fold: 'default', toggled: [] };
+	}
+
+	private applyMemory(m: ViewMemory | null): void {
+		if (!m) return;
+		this.mode = m.mode;
+		this.query = m.query;
+		this.regex = m.regex;
+		this.caseSensitive = m.caseSensitive;
+		this.mem = { ...m, toggled: [...m.toggled] };
+	}
+
+	private snapshot(): ViewMemory {
+		return { ...this.mem, mode: this.mode, query: this.query, regex: this.regex, caseSensitive: this.caseSensitive };
+	}
+
+	/** Writes the state into the settings now and to data.json after a quiet time. Does nothing when memory is off. */
+	private remember(): void {
+		const r = this.rememberMode();
+		if (r === 'off') return;
+		const settings = this.plugin.settings;
+		const snap = this.snapshot();
+		if (r === 'global') settings.memory = { ...settings.memory, shared: snap };
+		else {
+			const path = this.target?.path;
+			if (!path) return;
+			settings.memory = putNote(settings.memory, path, snap);
+		}
+		if (this.saveTimer !== null) window.clearTimeout(this.saveTimer);
+		this.saveTimer = window.setTimeout(() => {
+			this.saveTimer = null;
+			void this.plugin.saveSettings();
+		}, SAVE_MS);
+	}
+
+	/** Saves a pending state now (view closes). */
+	private flushSave(): void {
+		if (this.saveTimer === null) return;
+		window.clearTimeout(this.saveTimer);
+		this.saveTimer = null;
+		void this.plugin.saveSettings();
+	}
+
+	/** A note was renamed (newPath) or deleted (null): the fold keys of this view follow, so a later save does not bring back the old path. */
+	movePathInMemory(oldPath: string, newPath: string | null): void {
+		this.mem = movePath({ shared: this.mem, notes: {} }, oldPath, newPath).shared ?? this.mem;
+	}
+
+	/** The current sort order. */
+	getSort(): SortOrder {
+		return this.mem.sort;
+	}
+
+	/** Changes the sort order and runs the scan again. */
+	setSort(sort: SortOrder): void {
+		this.mem = { ...this.mem, sort };
+		this.remember();
+		this.syncHeader();
+		this.schedule(0);
+	}
+
+	/** Paths of the notes in the results, in their shown order. For tests. */
+	resultPaths(): string[] {
+		return this.results.map((r) => r.path);
 	}
 
 	/** Puts the cursor in the search box. */
@@ -141,6 +243,7 @@ export class ContextTreesView extends ItemView {
 		if (mode !== 'search') this.target = this.app.workspace.getActiveFile() ?? this.target;
 		this.mode = mode;
 		if (query !== undefined) this.query = query;
+		this.remember();
 		this.syncHeader();
 		this.schedule(0);
 	}
@@ -157,6 +260,7 @@ export class ContextTreesView extends ItemView {
 		this.query = query;
 		this.regex = opts.regex === true;
 		this.caseSensitive = opts.caseSensitive === true;
+		this.remember();
 		this.syncHeader();
 	}
 
@@ -169,6 +273,7 @@ export class ContextTreesView extends ItemView {
 	}
 
 	refresh(): void {
+		if (this.rememberMode() !== 'off') this.applyMemory(this.memoryFor(this.target?.path ?? null));
 		this.syncHeader();
 		this.schedule(0);
 	}
@@ -181,13 +286,11 @@ export class ContextTreesView extends ItemView {
 		for (const m of MODES) {
 			const b = this.tabsEl.createEl('button', { cls: 'ct-tab', text: m.label, attr: { 'aria-pressed': String(m.id === this.mode) } });
 			if (m.id === this.mode) b.addClass('is-active');
-			if (m.id === 'unlinked' && !isPro()) b.createSpan({ cls: 'ct-pro', text: 'Pro' });
-			b.addEventListener('click', () => {
-				if (m.id === 'unlinked' && !isPro()) return void this.needsPro('Unlinked mentions');
-				this.setMode(m.id);
-			});
+			b.addEventListener('click', () => this.setMode(m.id));
 		}
 		const tools = this.tabsEl.createDiv({ cls: 'ct-tools' });
+		const sortLabel = SORTS.find((x) => x.id === this.mem.sort)?.label ?? '';
+		this.toolButton(tools, 'arrow-up-down', `Sort: ${sortLabel}`, (e) => this.sortMenu(e));
 		this.toolButton(tools, 'chevrons-up', 'Fold all', () => this.foldAll(true));
 		this.toolButton(tools, 'chevrons-down', 'Unfold all', () => this.foldAll(false));
 		this.toolButton(tools, 'download', isPro() ? 'Export results as a note' : 'Export results as a note (Pro)', () => void this.exportResults());
@@ -197,12 +300,14 @@ export class ContextTreesView extends ItemView {
 		this.inputRow.querySelectorAll('.ct-switch').forEach((n) => n.remove());
 		this.switchButton('Aa', 'Match case', this.caseSensitive, () => {
 			this.caseSensitive = !this.caseSensitive;
+			this.remember();
 			this.syncHeader();
 			this.schedule(0);
 		});
 		this.switchButton('.*', isPro() ? 'Regular expression' : 'Regular expression (Pro)', this.regex, () => {
 			if (!isPro()) return void this.needsPro('Regular expression search');
 			this.regex = !this.regex;
+			this.remember();
 			this.syncHeader();
 			this.schedule(0);
 		});
@@ -210,10 +315,16 @@ export class ContextTreesView extends ItemView {
 		this.syncSaved();
 	}
 
-	private toolButton(parent: HTMLElement, icon: string, label: string, onClick: () => void): void {
+	private toolButton(parent: HTMLElement, icon: string, label: string, onClick: (e: MouseEvent) => void): void {
 		const b = parent.createEl('button', { cls: 'ct-tool clickable-icon', attr: { 'aria-label': label } });
 		setIcon(b, icon);
 		b.addEventListener('click', onClick);
+	}
+
+	private sortMenu(e: MouseEvent): void {
+		const menu = new Menu();
+		for (const s of SORTS) menu.addItem((item) => item.setTitle(s.label).setChecked(s.id === this.mem.sort).onClick(() => this.setSort(s.id)));
+		menu.showAtMouseEvent(e);
 	}
 
 	private switchButton(text: string, label: string, on: boolean, onClick: () => void): void {
@@ -266,9 +377,11 @@ export class ContextTreesView extends ItemView {
 		this.shown = 0;
 		this.moreEl?.remove();
 		this.moreEl = null;
-		this.bodyEl.empty();
 		const t0 = performance.now();
-		const stats: ScanStats = { mode: this.mode, scanned: 0, notes: 0, hits: 0, firstMs: null, totalMs: 0, done: false };
+		this.bodyEl.empty();
+		const stats: ScanStats = { mode: this.mode, scanned: 0, notes: 0, hits: 0, firstMs: null, totalMs: 0, done: false, maxBlockMs: 0 };
+		// Memory off: the folds start fresh for each scan, as in 1.3.0.
+		if (this.rememberMode() === 'off') this.mem = { ...this.mem, fold: 'default', toggled: [] };
 		this.stats = stats;
 		let files: TFile[] = [];
 		let perFile: (file: TFile, lines: string[]) => Hit[];
@@ -279,7 +392,7 @@ export class ContextTreesView extends ItemView {
 				stats.done = true;
 				return;
 			}
-			files = this.app.vault.getMarkdownFiles().sort((a, b) => b.stat.mtime - a.stat.mtime);
+			files = this.app.vault.getMarkdownFiles();
 			perFile = (file, lines) => findHits(lines, parsed.query, bodyStart(this.app.metadataCache.getFileCache(file), lines));
 		} else {
 			const target = this.target ?? this.app.workspace.getActiveFile();
@@ -290,30 +403,49 @@ export class ContextTreesView extends ItemView {
 			}
 			this.target = target;
 			if (this.mode === 'backlinks') {
-				files = backlinkSources(this.app, target).sort((a, b) => a.path.localeCompare(b.path));
+				files = backlinkSources(this.app, target);
 				perFile = (file) => linkHits(this.app, file, target, this.app.metadataCache.getFileCache(file));
 			} else {
-				if (!isPro()) {
-					this.statusEl.setText('Unlinked mentions are a pro feature. Sponsor on GitHub, then sign in from the plugin settings.');
+				const settings = this.plugin.settings;
+				const folders = listOf(settings.ignoreFolders);
+				const rules = { codeBlocks: settings.mentionsInCode, ignore: listOf(settings.ignoreTerms) };
+				const cacheOf = (f: TFile) => this.app.metadataCache.getFileCache(f);
+				if (inFolders(target.path, folders) || optOut(cacheOf(target)?.frontmatter).target) {
+					this.statusEl.setText('This note is in an ignored folder or opts out of unlinked mentions.');
 					stats.done = true;
 					return;
 				}
 				const names = namesOf(this.app, target);
-				files = this.app.vault.getMarkdownFiles().filter((f) => f.path !== target.path);
+				files = this.app.vault.getMarkdownFiles().filter((f) => f.path !== target.path && !inFolders(f.path, folders) && !optOut(cacheOf(f)?.frontmatter).source);
 				perFile = (file, lines) => {
-					const cache = this.app.metadataCache.getFileCache(file);
-					return findMentions(lines, names, linkRangesByLine(cache), bodyStart(cache, lines));
+					const cache = cacheOf(file);
+					const known = linkRangesByLine(cache);
+					for (const [line, r] of codeSectionLines(cache?.sections, lines, rules.codeBlocks)) known.set(line, [...(known.get(line) ?? []), ...r]);
+					return findUnlinked(lines, names, bodyStart(cache, lines), rules, known);
 				};
 			}
 		}
+		files = sortFiles(files.map((file) => ({ file, basename: file.basename, path: file.path, mtime: file.stat.mtime })), this.mem.sort, this.mode).map((x) => x.file);
 		this.statusEl.setText('Searching...');
+		// The work before the first read (clear, filter, sort) is one block too.
+		stats.maxBlockMs = Math.round(performance.now() - t0);
+		let sliceStart = performance.now();
 		for (let i = 0; i < files.length; i += BATCH) {
 			const batch = files.slice(i, i + BATCH);
 			const texts = await Promise.all(batch.map((f) => this.app.vault.cachedRead(f).catch(() => '')));
 			if (token !== this.token) return;
+			sliceStart = performance.now();
 			for (let k = 0; k < batch.length; k++) {
 				const file = batch[k];
 				if (!(file instanceof TFile)) continue;
+				if (performance.now() - sliceStart > SLICE_MS) {
+					this.flush(stats, t0);
+					// Measured after the draw: the draw is part of the block.
+					stats.maxBlockMs = Math.max(stats.maxBlockMs, Math.round(performance.now() - sliceStart));
+					await sleep0();
+					if (token !== this.token) return;
+					sliceStart = performance.now();
+				}
 				const lines = splitLines(texts[k] as string);
 				stats.scanned++;
 				const hits = perFile(file, lines);
@@ -325,6 +457,7 @@ export class ContextTreesView extends ItemView {
 				stats.hits += n;
 			}
 			this.flush(stats, t0);
+			stats.maxBlockMs = Math.max(stats.maxBlockMs, Math.round(performance.now() - sliceStart));
 			if (i + BATCH < files.length) await sleep0();
 			if (token !== this.token) return;
 		}
@@ -371,18 +504,20 @@ export class ContextTreesView extends ItemView {
 
 	private drawFile(r: FileResult): void {
 		const el = this.bodyEl.createDiv({ cls: 'ct-file', attr: { 'data-path': r.path } });
-		if (this.plugin.settings.foldNotes) el.addClass('is-collapsed');
+		if (noteFolded(this.mem, r.path, this.plugin.settings.foldNotes)) el.addClass('is-collapsed');
 		const head = el.createDiv({ cls: 'ct-file-head' });
 		const tg = head.createSpan({ cls: 'ct-toggle' });
 		setIcon(tg, 'chevron-down');
 		head.createSpan({ cls: 'ct-file-name', text: r.name, attr: { 'aria-label': r.path } });
 		head.createSpan({ cls: 'ct-count', text: String(r.hits) });
 		const body = el.createDiv({ cls: 'ct-file-body' });
-		for (const n of r.tree) this.drawNode(body, n);
+		for (const n of r.tree) this.drawNode(body, n, r.path);
 	}
 
-	private drawNode(parent: HTMLElement, n: TreeNode): void {
+	private drawNode(parent: HTMLElement, n: TreeNode, path: string): void {
 		const el = parent.createDiv({ cls: `ct-node ct-${n.kind}`, attr: { 'data-line': String(n.line) } });
+		if (n.children.length > 0) el.dataset.text = n.text;
+		if (n.children.length > 0 && branchFolded(this.mem, path, n.line, n.text)) el.addClass('is-collapsed');
 		if (n.kind === 'heading') el.addClass(`ct-h${String(Math.min(6, n.level ?? 1))}`);
 		if (n.hit) el.addClass('is-hit');
 		const row = el.createDiv({ cls: 'ct-row' });
@@ -394,11 +529,13 @@ export class ContextTreesView extends ItemView {
 		if (n.text === '') text.setText('Empty line');
 		if (n.children.length > 0) {
 			const kids = el.createDiv({ cls: 'ct-children' });
-			for (const c of n.children) this.drawNode(kids, c);
+			for (const c of n.children) this.drawNode(kids, c, path);
 		}
 	}
 
-	private foldAll(fold: boolean): void {
+	foldAll(fold: boolean): void {
+		this.mem = foldAllMemory(this.mem, fold);
+		this.remember();
 		this.bodyEl.querySelectorAll('.ct-file').forEach((f) => f.toggleClass('is-collapsed', fold));
 		this.bodyEl.querySelectorAll('.ct-node').forEach((f) => {
 			if (f.querySelector(':scope > .ct-children')) f.toggleClass('is-collapsed', fold);
@@ -416,7 +553,12 @@ export class ContextTreesView extends ItemView {
 		const node = t.closest<HTMLElement>('.ct-node');
 		if (toggle) {
 			const owner = toggle.parentElement?.classList.contains('ct-file-head') ? file : node;
-			if (owner && (owner === file || owner.querySelector(':scope > .ct-children'))) owner.toggleClass('is-collapsed', !owner.hasClass('is-collapsed'));
+			if (owner && (owner === file || owner.querySelector(':scope > .ct-children'))) {
+				owner.toggleClass('is-collapsed', !owner.hasClass('is-collapsed'));
+				const path = file.dataset.path ?? '';
+				this.mem = toggleKey(this.mem, owner === file ? path : branchKey(path, Number(owner.dataset.line), owner.dataset.text ?? ''));
+				this.remember();
+			}
 			return;
 		}
 		const path = file.dataset.path;
@@ -466,3 +608,4 @@ export class ContextTreesView extends ItemView {
 		return this.plugin.writeExport(this.toMarkdown(), this.mode === 'search' ? this.query : (this.target?.basename ?? this.mode));
 	}
 }
+

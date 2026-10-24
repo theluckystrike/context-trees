@@ -98,6 +98,9 @@ export function findHits(lines: string[], q: Query, from = 0): Hit[] {
 	return out;
 }
 
+/** Characters of scripts that do not put spaces between words. */
+export const SPACELESS = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Thai}\p{Script=Lao}\p{Script=Khmer}\p{Script=Myanmar}]/u;
+
 /** True when the code point at UTF-16 column `i` is part of a word. Out of range is false. */
 function isWordChar(s: string, i: number): boolean {
 	if (i < 0 || i >= s.length) return false;
@@ -125,7 +128,8 @@ export function findMentions(lines: string[], names: string[], links: Map<number
 		for (const name of wanted) {
 			for (let at = hay.indexOf(name); at >= 0 && found.length < 50; at = hay.indexOf(name, at + name.length)) {
 				const end = at + name.length;
-				if (isWordChar(hay, at - 1) || isWordChar(hay, end)) continue;
+				// Scripts written without spaces (Han, Kana, Thai and others) have no word boundary to test.
+				if ((!SPACELESS.test(name[0] as string) && isWordChar(hay, at - 1)) || (!SPACELESS.test(name[name.length - 1] as string) && isWordChar(hay, end))) continue;
 				const inLink = (links.get(i) ?? []).some(([a, b]) => at < b && end > a);
 				if (!inLink) found.push([at, end]);
 			}
