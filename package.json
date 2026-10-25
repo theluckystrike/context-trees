@@ -1,5 +1,6 @@
 {
 	"name": "context-trees",
+	"repository": {"type": "git", "url": "theluckystrike/context-trees.git"},
 	"version": "1.4.0",
 	"private": true,
 	"description": "A side view that shows search results and backlinks with their heading path and parent list items.",
