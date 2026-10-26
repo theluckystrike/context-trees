@@ -1,11 +1,9 @@
 {
 	"id": "context-trees",
 	"name": "Context Trees",
-	"version": "1.4.0",
+	"version": "1.4.1",
 	"changes": [
-		"Unlinked mentions are now free. They no longer count text in URLs, external links, tags or code.",
-		"New settings for unlinked mentions: ignored terms, ignored folders, and a note property to opt a note out.",
-		"Sort the results by name or modified time, and turn on Remember the view state to keep the tab, sort and folds."
+		"The Context Trees notice for a Pro feature now has a Sponsor on GitHub button."
 	],
 	"tip": "Turn on Remember the view state in the settings to keep your folds and sort order between notes.",
 	"thanks": "Hi, I am Michael, a solo developer in Poland. Context Trees is one of over 100 small plugins that I make. Thank you for using it to find things in your vault.",

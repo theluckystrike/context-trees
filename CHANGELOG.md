@@ -1,5 +1,11 @@
 # context-trees
 
+## 1.4.1
+
+### Patch Changes
+
+- The Context Trees notice for a Pro feature now has a Sponsor on GitHub button.
+
 ## 1.4.0
 
 ### Minor Changes

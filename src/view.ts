@@ -1,5 +1,5 @@
 import { ItemView, Keymap, Menu, Notice, TFile, getLinkpath, setIcon, type ViewStateResult, type WorkspaceLeaf } from 'obsidian';
-import { isPro, onProChange } from './pro';
+import { isPro, onProChange, proNotice } from './pro';
 import { drawLinkText } from './links';
 import { backlinkSources, bodyStart, linkHits, linkRangesByLine, namesOf, structureFor } from './notes';
 import { findHits, parseQuery } from './search';
@@ -366,7 +366,7 @@ export class ContextTreesView extends ItemView {
 	}
 
 	needsPro(feature: string): void {
-		new Notice(`${feature} is a pro feature. Sponsor on GitHub, then sign in from the plugin settings.`);
+		proNotice(`${feature} is a pro feature.`);
 	}
 
 	// ---- scanning -----------------------------------------------------------------------------------------
