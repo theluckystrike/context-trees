@@ -1,6 +1,6 @@
 {
 	"name": "context-trees",
-	"version": "1.4.1",
+	"version": "1.4.2",
 	"private": true,
 	"description": "A side view that shows search results and backlinks with their heading path and parent list items.",
 	"main": "main.js",
