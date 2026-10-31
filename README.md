@@ -6,7 +6,21 @@ Context Trees is its own view, built on the public Obsidian API. It does not cha
 
 <img src="https://raw.githubusercontent.com/theluckystrike/context-trees/HEAD/docs/demo.gif" alt="Search for pricing, refine the query, fold two notes, then switch to the backlinks of the open note" width="720">
 
-Free: search results, backlinks and unlinked mentions with heading and list context, mention filters, sort and a remembered view state. Pro: regular expressions, saved queries, exports, a view state for each note. $15 one time or $5 a month: [Sponsor](https://github.com/sponsors/theluckystrike?metadata_source=context-trees) or [$15 one-time offer](https://github.com/sponsors/theluckystrike/sponsorships?tier_id=666162&metadata_source=context-trees).
+Free: search results, backlinks and unlinked mentions with heading and list context, mention filters, sort and a remembered view state. Pro: regular expressions, saved queries, exports, a view state for each note. $15 one time or $5 a month: [Sponsor](https://github.com/sponsors/theluckystrike?frequency=one-time&metadata_source=context-trees) or [$15 one-time offer](https://github.com/sponsors/theluckystrike/sponsorships?tier_id=666162&metadata_source=context-trees).
+
+## Quick start
+
+1. Paste this text into a note:
+
+```markdown
+## Pricing
+
+- Plans for 2027
+  - The team plan costs more.
+```
+
+2. Run the command "Search the vault". Type `team plan` in the search box.
+3. Read the tree: the heading Pricing, the parent item "Plans for 2027" and the line.
 
 ## Features
 
@@ -121,7 +135,7 @@ No. It only reads notes. Export creates a new note.
 
 The core features are free. Pro features need a GitHub Sponsors sponsorship of theluckystrike: $5 a month or more, or $15 once. A total payment of $15 meets the payment requirement for Pro without further payment. Sign-in and the checks below still apply. Your notes stay readable and editable with or without Pro.
 
-GitHub handles the payment. Sponsor at https://github.com/sponsors/theluckystrike. You need no account for the free features. Pro needs the GitHub account that sponsors.
+GitHub handles the payment. Sponsor at https://github.com/sponsors/theluckystrike?frequency=one-time&metadata_source=context-trees. You need no account for the free features. Pro needs the GitHub account that sponsors.
 
 Until you select "Sign in with GitHub" in the settings, Context Trees makes no network requests. Sign in uses the GitHub device flow. Context Trees sends its public client ID and the scope `read:user` to `https://github.com/login/device/code` and shows you a code. While you enter the code at https://github.com/login/device, it asks `https://github.com/login/oauth/access_token` every few seconds to check the sign-in status. The scope permits profile reads only. GitHub needs this access to show the sponsorship tier. It grants no repository scope and no write access.
 
