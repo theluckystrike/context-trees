@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { codeSpans, exclusionsByLine, findUnlinked, inFolders, lineExclusions, listOf, optOut } from '../src/mentions';
 import { splitLines } from '../src/reference';
+import { GROWTH_LIMIT, growth, pairedRatio } from './growth';
 
 const cols = (line: string, ranges: [number, number][]) => ranges.map(([a, b]) => line.slice(a, b));
 
@@ -72,23 +73,37 @@ describe('mention scope', () => {
 });
 
 describe('mention scan cost', () => {
-	it('scans 2,000 notes of 40 lines in well under one second', () => {
+	it('scans 2,000 notes of 40 lines in time that grows linearly with the note count, and the fast path is cheaper', () => {
 		const words = ['alpha', 'bravo', 'charlie', 'delta'];
-		const notes = Array.from({ length: 2000 }, (_, i) =>
-			Array.from({ length: 40 }, (_, j) => `- ${words[(i + j) % 4]} line ${j} [[Link ${i}]] https://x.io/${i} #tag${j} \`code\` ${j % 9 === 0 ? 'Atlas' : ''}`),
-		);
-		const t0 = performance.now();
+		const notesOf = (n: number) =>
+			Array.from({ length: n }, (_, i) =>
+				Array.from({ length: 40 }, (_, j) => `- ${words[(i + j) % 4]} line ${j} [[Link ${i}]] https://x.io/${i} #tag${j} \`code\` ${j % 9 === 0 ? 'Atlas' : ''}`),
+			);
+		const notes = notesOf(2000);
 		let hits = 0;
 		for (const lines of notes) hits += findUnlinked(lines, ['Atlas'], 0).length;
-		const ms = performance.now() - t0;
 		expect(hits).toBe(2000 * 5);
-		// ESTIMATE of the budget: about 0.5 ms for each note on CI. The view also yields each 12 ms.
-		expect(ms).toBeLessThan(1500);
-		// The fast path: notes without the name cost almost nothing.
-		const t1 = performance.now();
-		for (const lines of notes) findUnlinked(lines, ['Zebra'], 0);
-		expect(performance.now() - t1).toBeLessThan(400);
-	});
+		// Growth guard (s1101): 2,000 notes against 200 notes, timed in this test.
+		const g = growth((n) => {
+			const set = notesOf(n);
+			return () => {
+				for (const lines of set) findUnlinked(lines, ['Atlas'], 0);
+			};
+		}, 2000);
+		expect(g.ratio, g.text).toBeLessThan(GROWTH_LIMIT);
+		// The fast path: notes without the name cost less than the scan of notes with the name, timed in this test.
+		// Measured on the agent Mac 2026-11-01: ratio 0.018 to 0.020 (about 2 ms against 105 to 111 ms). The limit is 3 times the highest ratio.
+		const fast = pairedRatio(
+			() => {
+				for (const lines of notes) findUnlinked(lines, ['Atlas'], 0);
+			},
+			() => {
+				for (const lines of notes) findUnlinked(lines, ['Zebra'], 0);
+			},
+		);
+		expect(fast.ratio, fast.text).toBeLessThan(0.06);
+		// 2,105-2,186 ms on the agent Mac with 5 rounds (s1104 R-CI-A); 60 s keeps more than 25 times that for a slow CI runner.
+	}, 60_000);
 });
 
 describe('code sections from the metadata cache (review R5)', () => {

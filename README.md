@@ -115,7 +115,7 @@ After a minor or major update, this plugin opens one What's new tab in the backg
 | Notes per page | How many notes are listed before "Show more", from 10 to 500. Default 50. The count also includes the notes that are not listed yet. |
 | Search delay | Milliseconds to wait after you stop typing, from 100 to 1500. Default 250. |
 
-The settings tab also has the Pro section: sign in with GitHub, the status and Refresh.
+The settings tab has the Pro section: GitHub sign in, the status and Refresh.
 
 ## FAQ
 
@@ -134,6 +134,8 @@ No. It only reads notes. Export creates a new note.
 ## Payment, account and network
 
 The core features are free. Pro features need a GitHub Sponsors sponsorship of theluckystrike: $5 a month or more, or $15 once. A total payment of $15 meets the payment requirement for Pro without further payment. Sign-in and the checks below still apply. Your notes stay readable and editable with or without Pro.
+
+[One payment turns on Pro in every NoteMods plugin](https://notemods.com/pro/).
 
 GitHub handles the payment. Sponsor at https://github.com/sponsors/theluckystrike?frequency=one-time&metadata_source=context-trees. You need no account for the free features. Pro needs the GitHub account that sponsors.
 

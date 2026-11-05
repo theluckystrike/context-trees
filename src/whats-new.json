@@ -1,9 +1,9 @@
 {
 	"id": "context-trees",
 	"name": "Context Trees",
-	"version": "1.4.2",
+	"version": "1.4.3",
 	"changes": [
-		"The Sponsor on GitHub button now opens the one-time payment tab of GitHub Sponsors."
+		"The Pro notice of Context Trees now says that one payment turns on Pro in every NoteMods plugin."
 	],
 	"tip": "Turn on Remember the view state in the settings to keep your folds and sort order between notes.",
 	"thanks": "Hi, I am Michael, a solo developer in Poland. Context Trees is one of over 100 small plugins that I make. Thank you for using it to find things in your vault.",

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildTree, contextChain, countHits, headingChain, headingText, itemAt, itemChain, itemText, treeToMarkdown, type ItemRef } from '../src/tree';
 import { findHits, findMentions, matchLine, mergeRanges, parseQuery, splitTerms } from '../src/search';
 import { frontmatterEnd, outline, structureFromMarkdown, trees } from '../src/reference';
+import { GROWTH_LIMIT, growth } from './growth';
 
 const lines = (s: string): string[] => s.split('\n');
 
@@ -165,17 +166,22 @@ describe('audit fixes', () => {
 });
 
 describe('buildTree cost (review R5)', () => {
-	it('merges 20,000 hits in one note in well under a second', async () => {
+	it('merges 20,000 hits in one note in time that grows linearly with the hit count', async () => {
 		const { buildTree: build } = await import('../src/tree');
 		const { structureFromMarkdown } = await import('../src/reference');
 		const { findUnlinked } = await import('../src/mentions');
-		const lines = Array.from({ length: 20000 }, (_, i) => (i % 100 === 0 ? `## Part ${i}` : `- ${i} entry about Atlas with [[Link ${i}]] https://x.io/${i}`));
+		const linesOf = (n: number) => Array.from({ length: n }, (_, i) => (i % 100 === 0 ? `## Part ${i}` : `- ${i} entry about Atlas with [[Link ${i}]] https://x.io/${i}`));
+		const lines = linesOf(20000);
 		const hits = findUnlinked(lines, ['Atlas'], 0);
 		expect(hits.length).toBe(19800);
-		const t0 = performance.now();
+		// Growth guard (s1101): the old code took 2.4 s at 20,000 hits (review probe), a quadratic merge. 20,000 against 2,000 lines.
+		const g = growth((n) => {
+			const l = linesOf(n);
+			const h = findUnlinked(l, ['Atlas'], 0);
+			return () => build(l, structureFromMarkdown(l), h);
+		}, 20000);
+		expect(g.ratio, g.text).toBeLessThan(GROWTH_LIMIT);
 		const tree = build(lines, structureFromMarkdown(lines), hits);
-		// ESTIMATE of the budget: the old code took 2.4 s at 20,000 hits (review probe); a linear merge takes a few ms.
-		expect(performance.now() - t0).toBeLessThan(500);
 		expect(tree).toHaveLength(200);
 		expect(tree[1]?.line).toBe(100);
 	});

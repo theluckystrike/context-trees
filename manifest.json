@@ -1,9 +1,9 @@
 {
 	"id": "context-trees",
 	"name": "Context Trees",
-	"version": "1.4.2",
+	"version": "1.4.3",
 	"minAppVersion": "1.13.4",
-	"description": "A side view that shows search results and backlinks with their heading path and parent list items.",
+	"description": "Show search results and backlinks as an outline with context. Each match has its heading path and its parent bullets, and lines with one parent share one tree.",
 	"author": "Michael Lip",
 	"authorUrl": "https://github.com/theluckystrike",
 	"fundingUrl": "https://github.com/sponsors/theluckystrike",
