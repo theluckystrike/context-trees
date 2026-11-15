@@ -1,5 +1,11 @@
 # context-trees
 
+## 1.4.4
+
+### Patch Changes
+
+- The Sponsor button now opens the NoteMods one-time tier.
+
 ## 1.4.3
 
 ### Patch Changes

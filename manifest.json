@@ -1,7 +1,7 @@
 {
 	"id": "context-trees",
 	"name": "Context Trees",
-	"version": "1.4.3",
+	"version": "1.4.4",
 	"minAppVersion": "1.13.4",
 	"description": "Show search results and backlinks as an outline with context. Each match has its heading path and its parent bullets, and lines with one parent share one tree.",
 	"author": "Michael Lip",

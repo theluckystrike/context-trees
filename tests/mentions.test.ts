@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { codeSpans, exclusionsByLine, findUnlinked, inFolders, lineExclusions, listOf, optOut } from '../src/mentions';
 import { splitLines } from '../src/reference';
 import { GROWTH_LIMIT, growth, pairedRatio } from './growth';
+import { budget } from './time-scale';
 
 const cols = (line: string, ranges: [number, number][]) => ranges.map(([a, b]) => line.slice(a, b));
 
@@ -103,7 +104,7 @@ describe('mention scan cost', () => {
 		);
 		expect(fast.ratio, fast.text).toBeLessThan(0.06);
 		// 2,105-2,186 ms on the agent Mac with 5 rounds (s1104 R-CI-A); 60 s keeps more than 25 times that for a slow CI runner.
-	}, 60_000);
+	}, budget(60_000));
 });
 
 describe('code sections from the metadata cache (review R5)', () => {
